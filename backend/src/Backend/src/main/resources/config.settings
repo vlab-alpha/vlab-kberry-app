@@ -1,0 +1,12 @@
+{
+  "username": "myUser",
+  "password": "myPassword",
+  "mqttHost": "192.168.1.10",
+  "mqttPort": 1883,
+  "calendarUrl": "",
+  "mailUserName": "",
+  "mailPassword": "",
+  "mailHost": "",
+  "mailPort": 554,
+  "toMail": ""
+}
