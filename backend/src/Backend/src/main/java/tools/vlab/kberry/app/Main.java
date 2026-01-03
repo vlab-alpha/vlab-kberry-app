@@ -47,7 +47,7 @@ public class Main {
                 Haus.KidsRoomYellowPC
         ));
 
-        var server = KBerryServer.Builder.create("/dev/ttyAMA0", "127.0.0.1", 1883, 2000, 10)
+        var server = KBerryServer.Builder.create("/dev/ttyAMA0", settings.getMqttHost(), settings.getMqttPort(), 2000, 10)
                 // Push Taster
                 .register(PushButton.at(Haus.KidsRoomYellowWall))
                 .register(PushButton.at(Haus.KidsRoomBlueWall))

@@ -1,7 +1,6 @@
 package tools.vlab.kberry.app;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
 
 public class ConfigLoader {
 

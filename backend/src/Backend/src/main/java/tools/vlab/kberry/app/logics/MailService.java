@@ -50,7 +50,6 @@ public class MailService extends AbstractVerticle {
     /**
      * Sendet eine Mail.
      *
-     * @param to      Empfängeradresse
      * @param subject Betreff
      * @param body    Inhalt der Mail
      */
