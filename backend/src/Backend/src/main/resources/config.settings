@@ -1,0 +1,13 @@
+{
+  "iCloudUsername": "",
+  "iCloudPassword": "",
+  "password": "1987",
+  "mqttHost": "localhost",
+  "mqttPort": 1883,
+  "calendarUrl": "",
+  "mailUserName": "",
+  "mailPassword": "",
+  "mailHost": "",
+  "mailPort": 554,
+  "toMail": ""
+}
