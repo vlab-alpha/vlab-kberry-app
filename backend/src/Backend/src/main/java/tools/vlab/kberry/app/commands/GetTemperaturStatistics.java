@@ -8,7 +8,6 @@ import tools.vlab.kberry.core.PositionPath;
 import tools.vlab.kberry.server.commands.Command;
 import tools.vlab.kberry.server.commands.CommandTopic;
 
-import java.util.Map;
 import java.util.Optional;
 
 public class GetTemperaturStatistics extends Command {
@@ -16,15 +15,16 @@ public class GetTemperaturStatistics extends Command {
     @Override
     public Future<Optional<JsonObject>> execute(JsonObject message) {
         PositionPath positionPath = Haus.positionPath(message.getString("positionPath"));
-        Map<Long, Double> t = this.getStatistics().getTemperatur().getValuesLastDay(positionPath);
-        var result = new JsonArray();
-        t.forEach((time, temperature) -> result.add(new JsonObject()
-                .put("time", time)
-                .put("temp", temperature)
-        ));
-        return Future.succeededFuture(Optional.of(new JsonObject()
-                .put("statistics", result)
-        ));
+        return this.getStatistics().getTemperatur().getValuesLastDay(positionPath).compose(stat -> {
+            var result = new JsonArray();
+            stat.forEach((time, temperature) -> result.add(new JsonObject()
+                    .put("time", time)
+                    .put("temp", temperature)
+            ));
+            return Future.succeededFuture(Optional.of(new JsonObject()
+                    .put("statistics", result)
+            ));
+        });
     }
 
     @Override

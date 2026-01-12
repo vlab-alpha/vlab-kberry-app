@@ -18,7 +18,6 @@ public class GetDimmerCommand extends Command {
         this.settings = settings;
     }
 
-
     @Override
     public Future<Optional<JsonObject>> execute(JsonObject message) {
         var positionPath = Haus.positionPath(message.getString("positionPath"));
@@ -39,7 +38,7 @@ public class GetDimmerCommand extends Command {
 
     @Override
     public CommandTopic topic() {
-        return Commands.GET_DIMMER;
+        return Commands.GET_DIMMER_STATUS;
     }
 
     @Override

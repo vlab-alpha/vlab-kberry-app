@@ -19,9 +19,9 @@ public class GetTemperatureCommand extends Command {
         PositionPath positionPath = Haus.positionPath(message.getString("positionPath"));
 
         var heizung = this.getKnxDevices().getKNXDevice(FloorHeater.class, positionPath);
-        var temperaturSensor = getKnxDevices().getKNXDevice(TemperatureSensor.class, positionPath);
+        var temperaturSensor = getKnxDevices().getKNXDeviceByRoom(TemperatureSensor.class, positionPath);
         if (heizung.isPresent() && temperaturSensor.isPresent()) {
-            var position = heizung.get().getCurrentActuatorPosition();
+            var position = heizung.get().getActuatorPositionPercent();
             var temperatur = temperaturSensor.get().getCurrentTemp();
             var sollwert = heizung.get().getCurrentSetpoint();
             var betriebsart = heizung.get().getCurrentMode();
@@ -33,9 +33,8 @@ public class GetTemperatureCommand extends Command {
             ));
         }
         return Future.succeededFuture(Optional.of(new JsonObject()
-                .put("temperatur", 0)
-                .put("sollwert", 0)
-                .put("error", 0)
+                .put("temperatur", 0.0)
+                .put("sollwert", 0.0)
                 .put("betriebsart", HeaterMode.STANDBY.name())
                 .put("position", 0)
         ));
@@ -43,7 +42,7 @@ public class GetTemperatureCommand extends Command {
 
     @Override
     public CommandTopic topic() {
-        return Commands.GET_TEMPERATURE;
+        return Commands.GET_TEMPERATURE_DATA;
     }
 
     @Override

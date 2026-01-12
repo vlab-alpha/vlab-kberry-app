@@ -121,28 +121,22 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     super.initState();
 
     informationMap["reolink_1"] = Information(
-      positionPath: "Haus/Eingang/Tür",
+      positionPath: "Haus/EG/Eingang/Türkamera",
       type: InformationType.camera,
       password: null,
-      title: "Türkamera",
-      value:
-          "rtsp://admin:dyjBu1-pawbin-biqbuc@192.168.178.99:554/h264Preview_01_main",
+      values: ["rtsp://admin:dyjBu1-pawbin-biqbuc@192.168.178.99:554/h264Preview_01_main"]
     );
     informationMap["phone"] = Information(
       type: InformationType.launcher,
-      positionPath: "Haus/Eingang/Diele",
-      title: "Telefon",
-      value: "openSipgate",
+      positionPath: "Haus/EG/Gang/Telefon",
       password: null,
-      icon: "phone",
+      values: ["openSipgate", "phone"]
     );
     informationMap["camera"] = Information(
       type: InformationType.launcher,
-      positionPath: "Haus/Eingang/Diele",
-      title: "Reolink",
-      value: "openReolinkApp",
+      positionPath: "Haus/EG/Gang/Camera",
+      values: ["openReolinkApp", "camera"],
       password: null,
-      icon: "camera",
     );
     _initAndLoad();
   }

@@ -24,7 +24,7 @@ class SwitchCard extends StatelessWidget {
   });
 
   bool value() {
-    return information.value=="true";
+    return information.firstValue=="true";
   }
 
   @override
@@ -34,27 +34,11 @@ class SwitchCard extends StatelessWidget {
     final Color borderColor = value() ? Colors.green : Colors.grey.shade800;
 
     Widget _buildIcon() {
-      if (information.icon != null) {
-        // Wenn value == false, Icon durchgestrichen darstellen
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            Icon(IconUtil.getIconFromString(information.icon), size: 36, color: accent),
-            if (!value())
-              Container(
-                width: 40,
-                height: 2,
-                color: Colors.redAccent,
-              ),
-          ],
-        );
-      } else {
-        return Icon(
-          value() ? Icons.power : Icons.power_off,
-          size: 36,
-          color: accent,
-        );
-      }
+      return Icon(
+        value() ? Icons.power : Icons.power_off,
+        size: 36,
+        color: accent,
+      );
     }
 
     return Container(
@@ -77,7 +61,7 @@ class SwitchCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              information.room().toUpperCase(),
+              information.room.toUpperCase(),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,

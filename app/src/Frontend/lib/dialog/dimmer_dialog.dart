@@ -31,7 +31,7 @@ class _LightDimmerDialogState extends ConsumerState<LightDimmerDialog>
     _tabController = TabController(length: 2, vsync: this);
 
     // Beispielwerte aus Information laden
-    brightness = int.tryParse(widget.information.value) ?? 50;
+    brightness = int.tryParse(widget.information.firstValue) ?? 50;
     targetBrightness = brightness;
     _getDimmer((Dimmer dimmer) {
       setState(() {
@@ -174,7 +174,7 @@ class _LightDimmerDialogState extends ConsumerState<LightDimmerDialog>
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         Text(
-                          "Raum: ${widget.information.room()}",
+                          "Raum: ${widget.information.room}",
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey.shade800,

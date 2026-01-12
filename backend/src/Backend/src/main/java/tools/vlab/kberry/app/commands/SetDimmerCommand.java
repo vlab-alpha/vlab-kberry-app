@@ -23,7 +23,7 @@ public class SetDimmerCommand extends Command {
 
     @Override
     public CommandTopic topic() {
-        return Commands.SET_DIMMER_PERCENT;
+        return Commands.SET_DIMMER_STATUS;
     }
 
     @Override

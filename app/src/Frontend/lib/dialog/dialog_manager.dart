@@ -35,7 +35,7 @@ Future<void> showInfoPopup(BuildContext context, Information info) async {
     case InformationType.light:
       dialog = LightDialog(information: info);
       break;
-    case InformationType.temperature:
+    case InformationType.floorHeater:
       dialog = TemperatureDialog(information: info);
       break;
     case InformationType.jalousie:
@@ -47,7 +47,7 @@ Future<void> showInfoPopup(BuildContext context, Information info) async {
     case InformationType.humidity:
       dialog = HumidityDialog(information: info);
       break;
-    case InformationType.usage:
+    case InformationType.presence:
       dialog = UsageDialog(information: info);
       break;
     case InformationType.weather:
@@ -59,7 +59,7 @@ Future<void> showInfoPopup(BuildContext context, Information info) async {
     case InformationType.fan:
       dialog = FanDialog(information: info);
       break;
-    case InformationType.co2:
+    case InformationType.voc:
       dialog = Co2Dialog(information: info);
       break;
     case InformationType.energy:

@@ -13,8 +13,8 @@ class HumidityDialog extends StatelessWidget {
   });
 
   bool get isAlarm =>
-      double.tryParse(information.value) != null &&
-          double.parse(information.value) >= maxHumidity;
+      double.tryParse(information.firstValue) != null &&
+          double.parse(information.firstValue) >= maxHumidity;
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +76,7 @@ class HumidityDialog extends StatelessWidget {
             const SizedBox(height: 16),
 
             Text(
-              "Raum: ${information.room()}",
+              "Raum: ${information.room}",
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey.shade800,
@@ -105,7 +105,7 @@ class HumidityDialog extends StatelessWidget {
 
             // --- Luftfeuchtigkeit Anzeige ---
             Text(
-              "${information.value}%",
+              "${information.firstValue}%",
               style: TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.bold,

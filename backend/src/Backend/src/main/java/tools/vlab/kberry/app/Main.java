@@ -3,16 +3,20 @@ package tools.vlab.kberry.app;
 import io.vertx.core.Vertx;
 import tools.vlab.kberry.app.commands.*;
 import tools.vlab.kberry.app.dashboard.DashboardUpdate;
+import tools.vlab.kberry.app.logics.BathSceneLogic;
+import tools.vlab.kberry.app.logics.LivingRoomSceneLogic;
 import tools.vlab.kberry.app.logics.MailService;
-import tools.vlab.kberry.app.settings.DimmerSettingsVerticle;
-import tools.vlab.kberry.app.settings.JalousieSettingsVerticle;
-import tools.vlab.kberry.app.settings.LightSettingsVerticle;
-import tools.vlab.kberry.app.settings.PlugSettingsVerticle;
+import tools.vlab.kberry.app.settings.*;
 import tools.vlab.kberry.core.PositionPath;
 import tools.vlab.kberry.core.baos.TimeoutException;
 import tools.vlab.kberry.core.devices.PushButton;
 import tools.vlab.kberry.core.devices.Scene;
 import tools.vlab.kberry.core.devices.actor.*;
+import tools.vlab.kberry.core.devices.actor.Dimmer;
+import tools.vlab.kberry.core.devices.actor.FloorHeater;
+import tools.vlab.kberry.core.devices.actor.Jalousie;
+import tools.vlab.kberry.core.devices.actor.Light;
+import tools.vlab.kberry.core.devices.actor.Plug;
 import tools.vlab.kberry.core.devices.sensor.*;
 import tools.vlab.kberry.server.KBerryServer;
 import tools.vlab.kberry.server.logic.AutoLightOnLogic;
@@ -41,13 +45,20 @@ public class Main {
         vertx.deployVerticle(lightSettings);
         var dimmerSettings = new DimmerSettingsVerticle("storage");
         vertx.deployVerticle(dimmerSettings);
+        var floorHeaterSettings = new FloorHeaterSettingsVerticle("storage");
+        vertx.deployVerticle(floorHeaterSettings);
 
         HashSet<PositionPath> passwordRequired = new HashSet<>(Set.of(
                 Haus.LivingRoomTV,
                 Haus.KidsRoomYellowPC
         ));
 
-        var server = KBerryServer.Builder.create("/dev/ttyAMA0", settings.getMqttHost(), settings.getMqttPort(), 2000, 10)
+        int intervalUpdateMs = 10000;
+
+        // Extend Light Function
+        var lightSettingsCommand = new SetLightSettingsCommand(lightSettings);
+
+        var server = KBerryServer.Builder.create("/dev/ttyAMA0", settings.getMqttHost(), settings.getMqttPort())
                 // Push Taster
                 .register(PushButton.at(Haus.KidsRoomYellowWall))
                 .register(PushButton.at(Haus.KidsRoomBlueWall))
@@ -63,6 +74,8 @@ public class Main {
                 .register(Light.at(Haus.GuestWC_Top))
                 .register(Light.at(Haus.ChangingRoomTop))
                 .register(Light.at(Haus.DiningRoomTop))
+                .register(Light.at(Haus.LivingRoomTop))
+                .register(Light.at(Haus.KitchenTop))
                 // Dimmer
                 .register(Dimmer.at(Haus.KitchenTop))
                 .register(Dimmer.at(Haus.LivingRoomTop))
@@ -76,6 +89,7 @@ public class Main {
                 .register(PresenceSensor.at(Haus.KidsRoomYellowTop))
                 .register(PresenceSensor.at(Haus.KidsRoomBlueTop))
                 .register(PresenceSensor.at(Haus.OfficeTop))
+                .register(PresenceSensor.at(Haus.BathTop))
                 .register(PresenceSensor.at(Haus.SleepingRoomTop))
                 .register(PresenceSensor.at(Haus.UpperHallwayTop))
                 .register(PresenceSensor.at(Haus.LivingRoomTop))
@@ -84,37 +98,39 @@ public class Main {
                 .register(PresenceSensor.at(Haus.HallwayTop))
                 .register(PresenceSensor.at(Haus.GuestWC_Wall))
                 // VOC
-                .register(VOCSensor.at(Haus.KitchenTop))
-                .register(VOCSensor.at(Haus.BathTop))
+                .register(VOCSensor.at(Haus.KitchenTop, intervalUpdateMs))
+                .register(VOCSensor.at(Haus.BathTop, intervalUpdateMs))
                 // Humidity
-                .register(HumiditySensor.at(Haus.OfficeTop))
-                .register(HumiditySensor.at(Haus.SleepingRoomTop))
-                .register(HumiditySensor.at(Haus.DiningRoomTop))
-                .register(HumiditySensor.at(Haus.BathTop))
-                .register(HumiditySensor.at(Haus.KitchenTop))
+                .register(HumiditySensor.at(Haus.OfficeTop, intervalUpdateMs))
+                .register(HumiditySensor.at(Haus.SleepingRoomTop, intervalUpdateMs))
+                .register(HumiditySensor.at(Haus.DiningRoomTop, intervalUpdateMs))
+                .register(HumiditySensor.at(Haus.BathTop, intervalUpdateMs))
+                .register(HumiditySensor.at(Haus.KitchenTop, intervalUpdateMs))
                 // Lux
-                .register(LuxSensor.at(Haus.KitchenTop))
-                .register(LuxSensor.at(Haus.BathTop))
-                .register(LuxSensor.at(Haus.SleepingRoomTop))
-                .register(LuxSensor.at(Haus.GuestWC_Wall))
-                .register(LuxSensor.at(Haus.DiningRoomTop))
+                .register(LuxSensor.at(Haus.KitchenTop, intervalUpdateMs))
+                .register(LuxSensor.at(Haus.BathTop, intervalUpdateMs))
+                .register(LuxSensor.at(Haus.SleepingRoomTop, intervalUpdateMs))
+                .register(LuxSensor.at(Haus.GuestWC_Wall, intervalUpdateMs))
+                .register(LuxSensor.at(Haus.DiningRoomTop, intervalUpdateMs))
                 // Electricity
-                .register(ElectricitySensor.at(Haus.KidsRoomYellowPC))
-                .register(ElectricitySensor.at(Haus.KidsRoomYellowTop))
-                .register(ElectricitySensor.at(Haus.OfficeTop))
-                .register(ElectricitySensor.at(Haus.HallwayTop))
-                .register(ElectricitySensor.at(Haus.UpperHallwayTop))
+                .register(ElectricitySensor.at(Haus.KidsRoomYellowPC, intervalUpdateMs))
+                .register(ElectricitySensor.at(Haus.KidsRoomYellowTop, intervalUpdateMs))
+                .register(ElectricitySensor.at(Haus.OfficeTop, intervalUpdateMs))
+                .register(ElectricitySensor.at(Haus.HallwayTop, intervalUpdateMs))
+                .register(ElectricitySensor.at(Haus.KidsRoomBlueTop, intervalUpdateMs))
+                .register(ElectricitySensor.at(Haus.LivingRoomTV, intervalUpdateMs))
+                .register(ElectricitySensor.at(Haus.LivingRoomPlugin, intervalUpdateMs))
                 // Temperature
-                .register(TemperatureSensor.at(Haus.OfficeTop))
-                .register(TemperatureSensor.at(Haus.KidsRoomYellowTop))
-                .register(TemperatureSensor.at(Haus.KidsRoomBlueTop))
-                .register(TemperatureSensor.at(Haus.SleepingRoomTop))
-                .register(TemperatureSensor.at(Haus.UpperHallwayWall))
-                .register(TemperatureSensor.at(Haus.BathTop))
-                .register(TemperatureSensor.at(Haus.LivingRoomTop))
-                .register(TemperatureSensor.at(Haus.DiningRoomTop))
-                .register(TemperatureSensor.at(Haus.HallwayWall))
-                .register(TemperatureSensor.at(Haus.KitchenTop))
+                .register(TemperatureSensor.at(Haus.OfficeTop, intervalUpdateMs))
+                .register(TemperatureSensor.at(Haus.KidsRoomYellowTop, intervalUpdateMs))
+                .register(TemperatureSensor.at(Haus.KidsRoomBlueTop, intervalUpdateMs))
+                .register(TemperatureSensor.at(Haus.SleepingRoomTop, intervalUpdateMs))
+                .register(TemperatureSensor.at(Haus.UpperHallwayWall, intervalUpdateMs))
+                .register(TemperatureSensor.at(Haus.BathTop, intervalUpdateMs))
+                .register(TemperatureSensor.at(Haus.LivingRoomTop, intervalUpdateMs))
+                .register(TemperatureSensor.at(Haus.DiningRoomTop, intervalUpdateMs))
+                .register(TemperatureSensor.at(Haus.HallwayWall, intervalUpdateMs))
+                .register(TemperatureSensor.at(Haus.KitchenTop, intervalUpdateMs))
                 // FloorHeater
                 .register(FloorHeater.at(Haus.OfficeFloor))
                 .register(FloorHeater.at(Haus.KidsRoomBlueFloor))
@@ -129,20 +145,44 @@ public class Main {
                 .register(FloorHeater.at(Haus.DiningRoomFloor))
                 // Scene
                 .register(Scene.at(Haus.BathWall))
+                .logic(BathSceneLogic.at(lightSettingsCommand.getLogic(), Haus.BathWall))
+                .register(Scene.at(Haus.LivingRoomWall))
+                .logic(LivingRoomSceneLogic.at(lightSettingsCommand.getLogic(), Haus.LivingRoomWall))
+
+                // Jalousie
+                .register(Jalousie.at(Haus.OfficeWall))
+                .register(Jalousie.at(Haus.SleepingRoomWall))
+                .register(Jalousie.at(Haus.KidsRoomBlueWall))
+                .register(Jalousie.at(Haus.KidsRoomYellowWall))
+                .register(Jalousie.at(Haus.KitchenWall))
+                .register(Jalousie.at(Haus.LivingRoomWall))
+                .register(Jalousie.at(Haus.DiningRoomWall))
+
+                // LUX
+                .register(LuxSensor.at(Haus.KidsRoomBlueTop, intervalUpdateMs))
+                .register(LuxSensor.at(Haus.OfficeTop, intervalUpdateMs))
+
+                //
+                .register(TemperatureSensor.at(Haus.ChangingRoomFloor, intervalUpdateMs))
+
                 // Default Logic
-                .logic(AutoLightOnLogic.at(Haus.BathTop))
-                .logic(AutoPresenceOffLogic.at(10 * 60, Haus.BathTop))
-                .logic(AutoLightOnLogic.at(Haus.GuestWC_Top))
-                .logic(AutoPresenceOffLogic.at(5 * 60, Haus.GuestWC_Top))
+//                .logic(AutoLightOnLogic.at(50, Haus.BathTop))
+//                .logic(AutoPresenceOffLogic.at(60, Haus.BathTop))
+//                .logic(AutoLightOnLogic.at(Haus.BathTop))
+//                .logic(AutoPresenceOffLogic.at(60 * 5, Haus.BathTop))
+//                .logic(AutoLightOnLogic.at(Haus.HallwayTop))
+//                .logic(AutoPresenceOffLogic.at(60 * 3, Haus.HallwayTop))
+//                .logic(AutoLightOnLogic.at(Haus.GuestWC_Top))
+//                .logic(AutoPresenceOffLogic.at(5 * 60, Haus.GuestWC_Top))
                 // Service Provider
-                .setICloudCalender(settings.getUsername(), settings.getPassword(), settings.getCalendarUrl())
+//                .setICloudCalender(settings.getICloudUsername(), settings.getICloudPassword(), settings.getCalendarUrl())
                 // Commands
                 .command(new SetPlugSettingsCommand(plugSettings))
                 .command(new SetPlugCommand())
                 .command(new SetJalousieSettingsCommand(jalousieSettings))
                 .command(new SetJalousieReferenceCommand())
                 .command(new SetLightCommand())
-                .command(new SetLightSettingsCommand(lightSettings))
+                .command(lightSettingsCommand)
                 .command(new SetTemperaturCommand())
                 .command(new SetDimmerCommand())
                 .command(new SetDimmerSettingsCommand(dimmerSettings))
@@ -153,7 +193,7 @@ public class Main {
                 .command(new GetUsageCommand())
                 .command(new GetTemperaturStatistics())
                 .command(new GetTemperatureCommand())
-                .command(new GetSettingsCommand(dimmerSettings, jalousieSettings, lightSettings, plugSettings))
+                .command(new GetSettingsCommand(dimmerSettings, jalousieSettings, lightSettings, plugSettings, floorHeaterSettings))
                 .command(new GetPositionPaths())
                 .command(new GetPlugCommand())
                 .command(new GetLightCommand())
@@ -168,9 +208,12 @@ public class Main {
                 .command(new HolidayStart())
                 .command(new HolidayEnd())
                 .command(new StartMovie())
+                .command(new SetFloorHeaterSettingsCommand(floorHeaterSettings))
                 .build();
 
-        vertx.deployVerticle(new DashboardUpdate(server.getDevices(), settings.getMqttHost(), settings.getMqttPort(), settings.getPassword(), passwordRequired));
+        // FIXME: Scene besitzt den selben Pfad!!!
+
+        vertx.deployVerticle(new DashboardUpdate(server.getDevices(), server.getStatistics(), settings.getMqttHost(), settings.getMqttPort(), settings.getPassword(), passwordRequired, server.getScenes()));
         try {
             System.out.println("Server Started...");
             server.startListening();

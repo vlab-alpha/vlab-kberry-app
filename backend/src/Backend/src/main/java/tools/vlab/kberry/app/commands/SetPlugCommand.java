@@ -14,7 +14,7 @@ public class SetPlugCommand extends Command {
 
     @Override
     public Future<Optional<JsonObject>> execute(JsonObject message) {
-        var positionPath = Haus.valueOf(message.getString("positionPath"));
+        var positionPath = Haus.positionPath(message.getString("positionPath"));
         var status = message.getBoolean("status");
         var device = this.getKnxDevices().getKNXDevice(Plug.class, positionPath);
         if (device.isPresent()) {
@@ -29,7 +29,7 @@ public class SetPlugCommand extends Command {
 
     @Override
     public CommandTopic topic() {
-        return Commands.SET_PLUG;
+        return Commands.SET_PLUG_STATUS;
     }
 
     @Override

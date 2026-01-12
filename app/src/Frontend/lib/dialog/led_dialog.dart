@@ -22,7 +22,7 @@ class _LedControlDialogState extends ConsumerState<LedControlDialog> {
   @override
   void initState() {
     super.initState();
-    final hex = widget.information.value;
+    final hex = widget.information.firstValue;
     final rgba = _hexToRgbw(hex);
     _r = rgba[0];
     _g = rgba[1];

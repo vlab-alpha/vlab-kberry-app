@@ -5,25 +5,17 @@ import tools.vlab.kberry.core.devices.sensor.PresenceSensor;
 import tools.vlab.kberry.core.devices.sensor.PresenceStatus;
 import tools.vlab.kberry.server.logic.Logic;
 
-import java.util.List;
-import java.util.Vector;
-
 public class AlarmLogic extends Logic implements PresenceStatus {
 
     private final MailService mailService;
 
-    private AlarmLogic(Vector<PositionPath> paths, MailService mailService) {
-        super(paths);
+    private AlarmLogic(PositionPath path, MailService mailService) {
+        super(path);
         this.mailService = mailService;
     }
 
-    public static AlarmLogic at(MailService mailService, PositionPath... path) {
-        return new AlarmLogic(new Vector<>(List.of(path)), mailService);
-    }
-
-
-    public static AlarmLogic at(MailService mailService, List<PositionPath> path) {
-        return new AlarmLogic(new Vector<>(path), mailService);
+    public static AlarmLogic at(MailService mailService, PositionPath path) {
+        return new AlarmLogic(path, mailService);
     }
 
     @Override

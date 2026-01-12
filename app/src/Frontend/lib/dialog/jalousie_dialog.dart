@@ -33,7 +33,7 @@ class _JalousieDialogState extends ConsumerState<JalousieDialog>
     _tabController = TabController(length: 2, vsync: this);
 
     // initial aus Information laden
-    shutterPosition = double.tryParse(widget.information.value) ?? 0.0;
+    shutterPosition = double.tryParse(widget.information.firstValue) ?? 0.0;
     _getPosition((double position){
       setState(() {
         shutterPosition = position;
@@ -232,7 +232,7 @@ class _JalousieDialogState extends ConsumerState<JalousieDialog>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          "Raum: ${widget.information.room()}",
+                          "Raum: ${widget.information.room}",
                           style: TextStyle(fontSize: 14, color: Colors.grey.shade800),
                         ),
                         const SizedBox(height: 4),

@@ -17,19 +17,21 @@ class _UsageDialogState extends ConsumerState<UsageDialog>
     with SingleTickerProviderStateMixin {
   String isUsed = "Unknown";
   int lastUsedMinutes = 0;
+  double usageAverage = 0.0;
 
   @override
   void initState() {
     super.initState();
-    _getUsageStatistics((isUsedP, lastUsedMinutesP) {
+    _getUsageStatistics((isUsedP, lastUsedMinutesP, usageAverageP) {
       setState(() {
         isUsed = isUsedP;
         lastUsedMinutes = lastUsedMinutesP;
+        usageAverage = usageAverageP;
       });
     });
   }
 
-  Future<void> _getUsageStatistics(void Function(String, int) onMessage) async {
+  Future<void> _getUsageStatistics(void Function(String, int, double) onMessage) async {
     final service = ref.read(smartHomeServiceProvider);
     final connected = await service.connect();
     if (!connected) return;
@@ -99,14 +101,14 @@ class _UsageDialogState extends ConsumerState<UsageDialog>
 
             const SizedBox(height: 16),
             Text(
-              "Raum: ${widget.information.room()}",
+              "Raum: ${widget.information.room}",
               style: TextStyle(fontSize: 14, color: Colors.grey.shade800),
             ),
 
             Icon(Icons.people, size: 120, color: Colors.green.shade300),
             const SizedBox(height: 16),
             Text(
-              "${widget.information.value}%",
+              "${usageAverage.toStringAsFixed(2)}%",
               style: TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.bold,
@@ -115,7 +117,7 @@ class _UsageDialogState extends ConsumerState<UsageDialog>
             ),
             const SizedBox(height: 6),
             Text(
-              "Genutzt vor ${lastUsedMinutes} Minuten",
+              "Genutzt vor $lastUsedMinutes Minuten",
               style: TextStyle(
                 fontSize: 8,
                 fontWeight: FontWeight.normal,
@@ -123,7 +125,7 @@ class _UsageDialogState extends ConsumerState<UsageDialog>
               ),
             ),
             Text(
-              "Wird Benutzt ${isUsed}",
+              "Wird Benutzt $isUsed",
               style: TextStyle(
                 fontSize: 8,
                 fontWeight: FontWeight.normal,

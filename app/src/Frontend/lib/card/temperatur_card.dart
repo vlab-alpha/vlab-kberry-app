@@ -1,28 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:SmartHome/model/data.dart';
 
 class TemperatureCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final String room;
+  final Information information;
 
-  const TemperatureCard({
-    super.key,
-    required this.room,
-    required this.title,
-    required this.value,
-  });
+  const TemperatureCard({super.key, required this.information});
+
+  int get percent => int.tryParse(information.firstValue) ?? 0;
+
+  double get temperature =>
+      double.tryParse(information.secondValue ?? "0.0") ?? 0.0;
+
+  bool get isHeating => percent > 0;
+
+  Color getBgColor() {
+    return isHeating ? Colors.orange.shade800 : Colors.green.shade300;
+  }
+
+  String get heaterType {
+    if (percent <= 0) {
+      return "aus"; // 0% = aus
+    } else if (percent <= 20) {
+      return "sehr sanft";
+    } else if (percent <= 50) {
+      return "moderat";
+    } else if (percent <= 80) {
+      return "kräftig";
+    } else {
+      return "maximal";
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final Color accent = Colors.orangeAccent;
     final Color bgColor = const Color(0xFF3A3A3A);
-    final Color borderColor = Colors.orange.shade700;
 
     return Container(
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: borderColor, width: 5),
+        border: Border.all(color: getBgColor(), width: 5),
         boxShadow: [
           BoxShadow(
             color: accent.withOpacity(0.3),
@@ -39,7 +57,7 @@ class TemperatureCard extends StatelessWidget {
           children: [
             // Raumname
             Text(
-              room.toUpperCase(),
+              information.room.toUpperCase(),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
@@ -50,16 +68,12 @@ class TemperatureCard extends StatelessWidget {
             const SizedBox(height: 6),
 
             // Icon
-            Icon(
-              Icons.thermostat,
-              size: 36,
-              color: accent,
-            ),
+            Icon(Icons.thermostat, size: 36, color: accent),
             const SizedBox(height: 10),
 
             // Titel
             Text(
-              title,
+              information.title,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -72,7 +86,7 @@ class TemperatureCard extends StatelessWidget {
 
             // Temperaturwert
             Text(
-              value+"°",
+              temperature.toStringAsFixed(2) + "°",
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -84,6 +98,15 @@ class TemperatureCard extends StatelessWidget {
                     offset: const Offset(0, 0),
                   ),
                 ],
+              ),
+            ),
+            Text(
+              heaterType,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: 0.0,
               ),
             ),
           ],

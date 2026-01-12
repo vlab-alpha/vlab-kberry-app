@@ -2,6 +2,7 @@ package tools.vlab.kberry.app.commands;
 
 import io.vertx.core.json.JsonObject;
 import tools.vlab.kberry.app.Haus;
+import tools.vlab.kberry.core.PositionPath;
 import tools.vlab.kberry.core.devices.RGB;
 import tools.vlab.kberry.core.devices.actor.Dimmer;
 import tools.vlab.kberry.core.devices.actor.Led;
@@ -18,6 +19,21 @@ public class StartMovie extends Scene {
         getKnxDevices().getKNXDevice(Dimmer.class, Haus.LivingRoomTop).ifPresent(dimmer -> dimmer.setBrightness(5));
         getKnxDevices().getKNXDevice(Led.class, Haus.LivingRoomTop).ifPresent(led -> led.setRGB(new RGB(50, 100, 200)));
         getKnxDevices().getKNXDevice(Plug.class, Haus.LivingRoomTV).ifPresent(Plug::on);
+    }
+
+    @Override
+    public PositionPath getPositionPath() {
+        return Haus.LivingRoomTV;
+    }
+
+    @Override
+    public String getIcon() {
+        return "local_movies";
+    }
+
+    @Override
+    public String getName() {
+        return "Starte Film";
     }
 
     @Override

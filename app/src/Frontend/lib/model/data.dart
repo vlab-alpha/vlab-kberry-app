@@ -1,16 +1,16 @@
 enum InformationType {
-  temperature,
+  floorHeater,
   light,
   humidity,
   jalousie,
-  usage,
+  presence,
   plug,
   weather,
   dimmer,
   fan,
   scene,
   camera,
-  co2,
+  voc,
   energy,
   launcher,
   led,
@@ -19,26 +19,33 @@ enum InformationType {
 
 class Information {
   final String positionPath;
-  final String value;
-  final String title;
+  final List<String> values;
   final InformationType type;
   final String? password;
-  final String? extraValue;
-  final String? icon;
 
   Information({
     required this.type,
     required this.positionPath,
-    required this.title,
-    required this.value,
+    required this.values,
     required this.password,
-    this.extraValue,
-    this.icon,
   });
 
-  String room() {
+  String get room {
+    var path = positionPath.split("/");
+    return path[2];
+  }
+
+  String get title {
     var path = positionPath.split("/");
     return path.last;
+  }
+
+  String get firstValue {
+    return values[0];
+  }
+
+  String? get secondValue {
+    return values.length > 1 ? values[1] : null;
   }
 }
 
@@ -156,7 +163,7 @@ enum SettingType {
   NumberSpan,
   Checkbox,
   Text,
-  Minutes
+  Minutes,
 }
 
 class Setting {
@@ -246,21 +253,18 @@ class Dimmer {
   Dimmer({required this.min, required this.max, required this.value});
 }
 
-enum Betriebsart { KOMFORT, STANDBY, NACHT }
+enum Betriebsart { COMFORT, STANDBY, NIGHT, FROST_PROTECTION }
 
 class FloorHeater {
   double temperatur;
   double sollwert;
-  bool error;
   int position;
   Betriebsart betriebsart;
 
   FloorHeater({
     required this.temperatur,
     required this.sollwert,
-    required this.error,
     required this.position,
-    required this.betriebsart
+    required this.betriebsart,
   });
 }
-

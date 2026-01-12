@@ -94,7 +94,7 @@ public class SetJalousieSettingsCommand extends Command {
                 this.start(
                         positionPath.getPath() + "_wakeup",
                         Daily.trigger(setting.getWakeUpTimeOpt().get().toLocalTime()),
-                        () -> jalousie.get().setPosition(setting.getWakeUpPostion()));
+                        () -> jalousie.get().setPositionPercent(setting.getWakeUpPostion()));
             } else {
                 this.stop(positionPath.getPath() + "_wakeup");
             }

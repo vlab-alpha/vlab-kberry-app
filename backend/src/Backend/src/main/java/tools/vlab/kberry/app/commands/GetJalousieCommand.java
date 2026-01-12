@@ -17,7 +17,7 @@ public class GetJalousieCommand extends Command {
         var device = this.getKnxDevices().getKNXDevice(Jalousie.class, positionPath);
         var position = 0;
         if (device.isPresent()) {
-            position = device.get().currentPosition();
+            position = device.get().getCurrentPositionPercent();
         }
         return Future.succeededFuture(Optional.of(new JsonObject()
                 .put("position", position)
@@ -26,7 +26,7 @@ public class GetJalousieCommand extends Command {
 
     @Override
     public CommandTopic topic() {
-        return Commands.GET_JALOUSIE;
+        return Commands.GET_JALOUSIE_POSITION;
     }
 
     @Override

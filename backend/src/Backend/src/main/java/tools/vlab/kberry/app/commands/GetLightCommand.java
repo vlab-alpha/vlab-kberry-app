@@ -24,7 +24,7 @@ public class GetLightCommand extends Command {
 
     @Override
     public CommandTopic topic() {
-        return Commands.GET_LIGHT;
+        return Commands.GET_LIGHT_STATUS;
     }
 
     @Override

@@ -22,7 +22,7 @@ class _LightDialogState extends ConsumerState<LightDialog>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    isLightOn = widget.information.value == "true";
+    isLightOn = widget.information.firstValue == "true";
     _getLightStatus((bool status) {
       setState(() {
         isLightOn = status;
@@ -143,7 +143,7 @@ class _LightDialogState extends ConsumerState<LightDialog>
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         Text(
-                          "Raum: ${widget.information.room()}",
+                          "Raum: ${widget.information.room}",
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey.shade800,

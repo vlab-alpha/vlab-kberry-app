@@ -9,7 +9,7 @@ class EnergyCard extends StatelessWidget {
     required this.information,
   });
 
-  double get consumption => double.tryParse(information.value) ?? 0.0; // kWh pro Tag
+  double get consumption => double.tryParse(information.firstValue) ?? 0.0; // kWh pro Tag
 
   Color get _color {
     if (consumption < 2) return Colors.greenAccent;
@@ -61,7 +61,7 @@ class EnergyCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              information.room().toUpperCase(),
+              information.room.toUpperCase(),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,

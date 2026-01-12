@@ -15,11 +15,11 @@ class ComboBox extends StatelessWidget {
   Widget build(BuildContext context) {
     final Map<InformationType, IconData> typeIcons = {
       InformationType.alle: Icons.dashboard,
-      InformationType.temperature: Icons.thermostat,
+      InformationType.floorHeater: Icons.thermostat,
       InformationType.light: Icons.lightbulb,
       InformationType.jalousie: Icons.blinds,
       InformationType.humidity: Icons.water_drop,
-      InformationType.usage: Icons.bar_chart,
+      InformationType.presence: Icons.bar_chart,
       InformationType.plug: Icons.power,
       InformationType.weather: Icons.wb_sunny,
       InformationType.dimmer: Icons.brightness_6_rounded,
@@ -27,7 +27,7 @@ class ComboBox extends StatelessWidget {
       InformationType.scene: Icons.play_circle,
       InformationType.camera: Icons.camera_alt,
       InformationType.launcher: Icons.rocket_launch,
-      InformationType.co2: Icons.co2,
+      InformationType.voc: Icons.co2,
       InformationType.led: Icons.color_lens,
       InformationType.energy: Icons.energy_savings_leaf,
     };

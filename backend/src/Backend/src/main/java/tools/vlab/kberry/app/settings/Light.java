@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import tools.vlab.kberry.app.dashboard.Setting;
 
+import java.time.LocalTime;
 import java.util.List;
 
 @Getter
@@ -13,25 +14,31 @@ import java.util.List;
 public class Light {
 
     private boolean presenceOff;
-    private boolean presenceOn;
     private int holdTimeMinute;
     private boolean onlyDark;
     private float minLux;
+    private boolean presenceOn;
+    private boolean presenceOnDuringTime;
+    private String startAutoOn;
+    private String endAutoOn;
 
     public Light() {
     }
 
-    public Light(boolean presenceOff, boolean presenceOn, int holdTimeMinute, boolean onlyDark, float minLux) {
+    public Light(boolean presenceOff, boolean presenceOn, int holdTimeMinute, boolean onlyDark, float minLux, boolean presenceOnDuringTime, String startAutoOn, String endAutoOn) {
         this.presenceOff = presenceOff;
         this.presenceOn = presenceOn;
         this.holdTimeMinute = holdTimeMinute;
         this.onlyDark = onlyDark;
         this.minLux = minLux;
+        this.presenceOnDuringTime = presenceOnDuringTime;
+        this.startAutoOn = startAutoOn;
+        this.endAutoOn = endAutoOn;
     }
 
     @JsonIgnore
     public static Light first() {
-        return new Light(false, false, 5, false, 0.0f);
+        return new Light(false, false, 5, false, 0.0f, false, null, null);
     }
 
     @JsonIgnore
@@ -54,16 +61,14 @@ public class Light {
             if (title == null) continue;
             String value = setting.getJsonObject("value").getString("value");
             switch (title) {
-                case "Auto Ausschalten" ->
-                        light.setPresenceOff(Boolean.parseBoolean(value));
-                case "Auto Einschalten" ->
-                        light.setPresenceOn(Boolean.parseBoolean(value));
-                case "Nachlaufzeit (min)" ->
-                    light.setHoldTimeMinute(Integer.parseInt(value));
-                case "Bei Dunkelheit" ->
-                        light.setOnlyDark(Boolean.parseBoolean(value));
-                case "Min Lux" ->
-                        light.setMinLux(Float.parseFloat(value));
+                case "Auto Ausschalten" -> light.setPresenceOff(Boolean.parseBoolean(value));
+                case "Auto Einschalten" -> light.setPresenceOn(Boolean.parseBoolean(value));
+                case "Nachlaufzeit (min)" -> light.setHoldTimeMinute(Integer.parseInt(value));
+                case "Bei Dunkelheit" -> light.setOnlyDark(Boolean.parseBoolean(value));
+                case "Min Lux" -> light.setMinLux(Float.parseFloat(value));
+                case "Auto An Begrenzen" -> light.setPresenceOnDuringTime(Boolean.parseBoolean(value));
+                case "Auto An Start" -> light.setStartAutoOn(value);
+                case "Auto An Ende" -> light.setEndAutoOn(value);
                 default -> {
                     // Unbekanntes Setting -> ignoriere
                 }
@@ -80,7 +85,20 @@ public class Light {
                 Setting.minutes("Nachlaufzeit (min)", getHoldTimeMinute(), "timelapse_outlined").toJson(),
                 Setting.checkbox("Auto Einschalten", isPresenceOn(), "person_pin_circle").toJson(),
                 Setting.checkbox("Bei Dunkelheit", isOnlyDark(), "person_pin_circle").toJson(),
-                Setting.number("Min Lux", getMinLux(), "person_pin_circle").toJson()
+                Setting.number("Min Lux", getMinLux(), "person_pin_circle").toJson(),
+                Setting.checkbox("Auto An Begrenzen",  isPresenceOnDuringTime(), "person_pin_circle").toJson(),
+                Setting.time("Auto An Start", getStartAutoOn(),"light_time_on").toJson(),
+                Setting.time("Auto An Ende", getStartAutoOn(),"light_time_off").toJson()
         );
+    }
+
+    @JsonIgnore
+    public LocalTime getStartAutoOnTime() {
+        return Time.of(startAutoOn).toLocalTime();
+    }
+
+    @JsonIgnore
+    public LocalTime getEndStartAutoOnTime() {
+        return Time.of(endAutoOn).toLocalTime();
     }
 }

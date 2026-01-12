@@ -18,7 +18,7 @@ public class Setting {
 
     public static Setting number(String title, Float v, String icon) {
         var value = new Value(ValueType.Double, null, null, v.toString());
-        return new Setting(SettingType.NumberSpan, title, value, icon);
+        return new Setting(SettingType.Number, title, value, icon);
     }
 
     public static Setting range(String title, Double from, Double to, Double current, String icon) {

@@ -1,12 +1,13 @@
 {
-  "username": "myUser",
-  "password": "myPassword",
-  "mqttHost": "192.168.1.10",
+  "iCloudUsername": "",
+  "iCloudPassword": "",
+  "password": "1987",
+  "mqttHost": "localhost",
   "mqttPort": 1883,
-  "calendarUrl": "",
-  "mailUserName": "",
-  "mailPassword": "",
-  "mailHost": "",
+  "calendarUrl": "webcal://p106-caldav.icloud.com/published/2/MTAyMjIyMTE2OTEwMjIyMvNYKt_ybZD4V6_Bz7wBQxQewcLoewy6zrdTlSA4jNyDoy5jW-LCbkalbyumtRW-8RIHqxh2VP2GL2i3VVbccDs",
+  "mailUserName": "kberry@vlab.tools",
+  "mailPassword": "dotmom-kifqo4-Xindub",
+  "mailHost": "smtp.strato.de",
   "mailPort": 554,
-  "toMail": ""
+  "toMail": "Michael.Radle@me.com"
 }

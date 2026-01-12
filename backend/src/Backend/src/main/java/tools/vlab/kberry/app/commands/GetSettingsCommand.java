@@ -5,10 +5,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import tools.vlab.kberry.app.Haus;
 import tools.vlab.kberry.app.dashboard.InformationType;
-import tools.vlab.kberry.app.settings.DimmerSettingsVerticle;
-import tools.vlab.kberry.app.settings.JalousieSettingsVerticle;
-import tools.vlab.kberry.app.settings.LightSettingsVerticle;
-import tools.vlab.kberry.app.settings.PlugSettingsVerticle;
+import tools.vlab.kberry.app.settings.*;
 import tools.vlab.kberry.server.commands.Command;
 import tools.vlab.kberry.server.commands.CommandTopic;
 
@@ -20,12 +17,14 @@ public class GetSettingsCommand extends Command {
     private final JalousieSettingsVerticle jalousieSettingsVerticle;
     private final LightSettingsVerticle lightSettingsVerticle;
     private final PlugSettingsVerticle plugSettingsVerticle;
+    private final FloorHeaterSettingsVerticle heaterSettingsVerticle;
 
-    public GetSettingsCommand(DimmerSettingsVerticle dimmerSettingsVerticle, JalousieSettingsVerticle jalousieSettingsVerticle, LightSettingsVerticle lightSettingsVerticle, PlugSettingsVerticle plugSettingsVerticle) {
+    public GetSettingsCommand(DimmerSettingsVerticle dimmerSettingsVerticle, JalousieSettingsVerticle jalousieSettingsVerticle, LightSettingsVerticle lightSettingsVerticle, PlugSettingsVerticle plugSettingsVerticle, FloorHeaterSettingsVerticle heaterSettingsVerticle) {
         this.dimmerSettingsVerticle = dimmerSettingsVerticle;
         this.jalousieSettingsVerticle = jalousieSettingsVerticle;
         this.lightSettingsVerticle = lightSettingsVerticle;
         this.plugSettingsVerticle = plugSettingsVerticle;
+        this.heaterSettingsVerticle = heaterSettingsVerticle;
     }
 
     @Override
@@ -46,6 +45,10 @@ public class GetSettingsCommand extends Command {
         }
         if (type == InformationType.plug) {
             return this.plugSettingsVerticle.getSettingAsync(positionPath)
+                    .map(currentSetting -> Optional.of(new JsonObject().put("settings", new JsonArray(currentSetting.toSettings()))));
+        }
+        if (type == InformationType.floorHeater) {
+            return this.heaterSettingsVerticle.getSettingAsync(positionPath)
                     .map(currentSetting -> Optional.of(new JsonObject().put("settings", new JsonArray(currentSetting.toSettings()))));
         }
         return Future.succeededFuture(Optional.of(new JsonObject().put("settings", new JsonArray())));

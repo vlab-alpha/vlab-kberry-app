@@ -22,7 +22,7 @@ class _FanDialogState extends ConsumerState<FanDialog>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    isFanOn = widget.information.value == "ON";
+    isFanOn = widget.information.firstValue == "ON";
   }
 
   @override
@@ -136,7 +136,7 @@ class _FanDialogState extends ConsumerState<FanDialog>
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         Text(
-                          "Raum: ${widget.information.room()}",
+                          "Raum: ${widget.information.room}",
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey.shade800,

@@ -13,7 +13,7 @@ public class GetPositionPaths extends Command {
 
     @Override
     public Future<Optional<JsonObject>> execute(JsonObject message) {
-        var paths = new JsonArray(this.getKnxDevices().getAllPositionPaths().stream().map(PositionPath::toString).toList());
+        var paths = new JsonArray(this.getKnxDevices().getAllPositionPaths().stream().map(PositionPath::getPath).toList());
         return Future.succeededFuture(Optional.of(new JsonObject().put("paths", paths)));
     }
 

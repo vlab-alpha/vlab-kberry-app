@@ -17,7 +17,7 @@ class _Co2CardState extends State<Co2Card> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   Color get _color {
-    final value = double.parse(widget.information.value);
+    final value = double.parse(widget.information.firstValue);
     if (value < 800) return Colors.greenAccent;
     if (value < 1200) return Colors.yellowAccent;
     if (value < 2000) return Colors.orangeAccent;
@@ -34,7 +34,7 @@ class _Co2CardState extends State<Co2Card> with SingleTickerProviderStateMixin {
       duration: const Duration(seconds: 2),
     );
 
-    if (double.parse(widget.information.value) > 2000) {
+    if (double.parse(widget.information.firstValue) > 2000) {
       _controller.repeat(reverse: true);
     }
   }
@@ -42,9 +42,9 @@ class _Co2CardState extends State<Co2Card> with SingleTickerProviderStateMixin {
   @override
   void didUpdateWidget(Co2Card oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (double.parse(widget.information.value) > 2000 && !_controller.isAnimating) {
+    if (double.parse(widget.information.firstValue) > 2000 && !_controller.isAnimating) {
       _controller.repeat(reverse: true);
-    } else if (double.parse(widget.information.value) <= 2000 && _controller.isAnimating) {
+    } else if (double.parse(widget.information.firstValue) <= 2000 && _controller.isAnimating) {
       _controller.stop();
     }
   }
@@ -64,8 +64,8 @@ class _Co2CardState extends State<Co2Card> with SingleTickerProviderStateMixin {
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        final double glow = (double.parse(widget.information.value) > 2000)
-            ? 0.4 + 0.3 * double.parse(widget.information.value)
+        final double glow = (double.parse(widget.information.firstValue) > 2000)
+            ? 0.4 + 0.3 * double.parse(widget.information.firstValue)
             : 0.2; // leichtes Glühen
         return Container(
           decoration: BoxDecoration(
@@ -87,7 +87,7 @@ class _Co2CardState extends State<Co2Card> with SingleTickerProviderStateMixin {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  widget.information.room().toUpperCase(),
+                  widget.information.room.toUpperCase(),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
@@ -113,7 +113,7 @@ class _Co2CardState extends State<Co2Card> with SingleTickerProviderStateMixin {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "${widget.information.value} ppm",
+                  "${widget.information.firstValue} ppm",
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.grey.shade400,

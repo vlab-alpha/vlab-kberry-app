@@ -16,7 +16,7 @@ public class SetLEDCommand extends Command {
 
     @Override
     public Future<Optional<JsonObject>> execute(JsonObject message) {
-        Haus positionPath = Haus.valueOf(message.getString("positionPath"));
+        Haus positionPath = Haus.positionPath(message.getString("positionPath"));
         String hex =  message.getString("hex");
         var device = getKnxDevices().getKNXDevice(Led.class, positionPath);
         if (device.isPresent()) {
@@ -29,7 +29,7 @@ public class SetLEDCommand extends Command {
 
     @Override
     public CommandTopic topic() {
-        return Commands.SET_LED;
+        return Commands.SET_LED_COLOR;
     }
 
     @Override

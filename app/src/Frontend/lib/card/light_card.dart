@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:SmartHome/model/data.dart';
 
 class LightsCard extends StatelessWidget {
-  final String title;
-  final bool value;
-  final String room;
+  final Information information;
 
   static const String svgOff = '''
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 490.1 490.1">
@@ -18,18 +17,45 @@ class LightsCard extends StatelessWidget {
 </svg>
 ''';
 
-  const LightsCard({
-    super.key,
-    required this.room,
-    required this.title,
-    required this.value,
-  });
+  bool get isOn => bool.tryParse(information.firstValue) ?? false;
+
+  double get lux => double.tryParse(information.secondValue ?? "0.0") ?? 0.0;
+
+  const LightsCard({super.key, required this.information});
+
+  Color getLuxColor() {
+    // Lux begrenzen
+    final clampedLux = lux.clamp(0, 10000);
+
+    // 0..1 normalisieren
+    final t = clampedLux / 10000;
+
+    // Hue: Blau (220°) → Gelb (55°)
+    final hue = 220 - (165 * t);
+
+    return HSVColor.fromAHSV(
+      1.0,
+      hue,
+      0.8,
+      0.9,
+    ).toColor();
+  }
+
+  Color getBorderColor() {
+    return getLuxColor().withAlpha(80);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final Color accent = value ? const Color(0xFF00BCD4) : Colors.grey.shade600;
+    double getLux() => double.tryParse(information.secondValue ?? "0.0") ?? 0.0;
+
+    final double glowOpacity = (getLux() / 100).clamp(0.1, 0.6);
+
+    final Color accent = isOn ? const Color(0xFF00BCD4) : Colors.grey.shade600;
     final Color bgColor = const Color(0xFF3A3A3A); // dunkles Panel
-    final Color borderColor = value ? const Color(0xFF448187) : Colors.grey.shade800;
+    final Color borderColor = isOn
+        ? const Color(0xFF448187)
+        : Colors.grey.shade800;
 
     return Container(
       decoration: BoxDecoration(
@@ -51,7 +77,7 @@ class LightsCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              room.toUpperCase(),
+              information.room.toUpperCase(),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
@@ -61,20 +87,20 @@ class LightsCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Icon(
-              value ? Icons.lightbulb : Icons.lightbulb_outline,
+              isOn ? Icons.lightbulb : Icons.lightbulb_outline,
               size: 36,
               color: accent,
             ),
             const SizedBox(height: 8),
             SvgPicture.string(
-              value ? svgOn : svgOff,
+              isOn ? svgOn : svgOff,
               width: 48,
               height: 48,
               colorFilter: ColorFilter.mode(accent, BlendMode.srcIn),
             ),
             const SizedBox(height: 10),
             Text(
-              title,
+              information.title,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,

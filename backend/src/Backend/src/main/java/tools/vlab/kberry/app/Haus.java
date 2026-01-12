@@ -12,6 +12,7 @@ public enum Haus implements PositionPath {
     LivingRoomTV("Haus", "EG", "Wohnzimmer", "TV"),
     LivingRoomPlugin("Haus", "EG", "Wohnzimmer", "Steckdosen"),
     LivingRoomFloor("Haus", "EG", "Wohnzimmer", "Boden"),
+    LivingRoomWall("Haus", "EG", "Wohnzimmer", "Wand"),
     DiningRoomTop("Haus", "EG", "Esszimmer", "Decke"),
     DiningRoomWall("Haus", "EG", "Esszimmer", "Wand"),
     DiningRoomFloor("Haus", "EG", "Esszimmer", "Boden"),
@@ -28,13 +29,13 @@ public enum Haus implements PositionPath {
     SleepingRoomTop("Haus", "OG", "Schlafzimmer", "Decke"),
     SleepingRoomWall("Haus", "OG", "Schlafzimmer", "Wand"),
     SleepingRoomFloor("Haus", "OG", "Schlafzimmer", "Floor"),
-    KidsRoomYellowTop("Haus", "OG", "Kinderzimmer Gelb", "Decke"),
-    KidsRoomYellowWall("Haus", "OG", "Kinderzimmer Gelb", "Wand"),
-    KidsRoomYellowFloor("Haus", "OG", "Kinderzimmer Gelb", "Boden"),
-    KidsRoomYellowPC("Haus", "OG", "Kinderzimmer Gelb", "PC"),
-    KidsRoomBlueTop("Haus", "OG", "Kinderzimmer Blau", "Decke"),
-    KidsRoomBlueWall("Haus", "OG", "Kinderzimmer Blau", "Wand"),
-    KidsRoomBlueFloor("Haus", "OG", "Kinderzimmer Blau", "Boden"),
+    KidsRoomYellowTop("Haus", "OG", "Gelb Kinderzimmer", "Decke"),
+    KidsRoomYellowWall("Haus", "OG", "Gelb Kinderzimmer", "Wand"),
+    KidsRoomYellowFloor("Haus", "OG", "Gelb Kinderzimmer", "Boden"),
+    KidsRoomYellowPC("Haus", "OG", "Gelb Kinderzimmer", "PC"),
+    KidsRoomBlueTop("Haus", "OG", "Blau Kinderzimmer", "Decke"),
+    KidsRoomBlueWall("Haus", "OG", "Blau Kinderzimmer", "Wand"),
+    KidsRoomBlueFloor("Haus", "OG", "Blau Kinderzimmer", "Boden"),
     OfficeTop("Haus", "OG", "Büro", "Decke"),
     OfficeWall("Haus", "OG", "Büro", "Wand"),
     OfficeFloor("Haus", "OG", "Büro", "Boden"),
@@ -81,7 +82,7 @@ public enum Haus implements PositionPath {
         if (message == null || message.isEmpty()) {
             throw new IllegalArgumentException("Message cannot be null or empty");
         }
-        String[] parts = message.split("\\.");
+        String[] parts = message.split("/");
         if (parts.length != 4) {
             throw new IllegalArgumentException("Message must have 4 parts: Location.Floor.Room.Position");
         }

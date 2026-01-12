@@ -22,7 +22,7 @@ class _PlugDialogState extends ConsumerState<PlugDialog>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    isPlugOn = widget.information.value == "true";
+    isPlugOn = widget.information.firstValue == "true";
     _getPlugStatus((status) {
       setState(() {
         isPlugOn = status;
@@ -146,7 +146,7 @@ class _PlugDialogState extends ConsumerState<PlugDialog>
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         Text(
-                          "Raum: ${widget.information.room()}",
+                          "Raum: ${widget.information.room}",
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey.shade800,

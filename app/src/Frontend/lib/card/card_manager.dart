@@ -20,70 +20,63 @@ import 'package:SmartHome/card/stream_card.dart';
 import 'package:SmartHome/card/usage_card.dart';
 import 'package:SmartHome/model/Position.dart';
 
-Widget buildCard(Information item, Future<void> Function(String positionPath, String title) executeScene) {
+Widget buildCard(
+  Information item,
+  Future<void> Function(String positionPath, String title) executeScene,
+) {
   switch (item.type) {
-    case InformationType.temperature:
+    case InformationType.floorHeater:
       return TemperatureCard(
-        room: item.room(),
-        title: item.title,
-        value: item.value,
+        information: item,
       );
     case InformationType.light:
-      return LightsCard(
-        room: item.room(),
-        title: item.title,
-        value: item.value == "true",
-      );
+      return LightsCard(information: item);
     case InformationType.jalousie:
       return JalousieCard(
-        room: item.room(),
-        position: double.parse(item.value),
+        room: item.room,
+        position: double.parse(item.firstValue),
         title: item.title,
       );
     case InformationType.humidity:
-      return HumidityCard(
-        information: item,
-      );
-    case InformationType.usage:
-      return UsageCard(
-        information: item,
-      );
+      return HumidityCard(information: item);
+    case InformationType.presence:
+      return UsageCard(information: item);
     case InformationType.plug:
       return SwitchCard(information: item);
     case InformationType.weather:
       return WeatherCard(
-        condition: item.value,
-        temperature: double.parse(item.extraValue!),
+        condition: item.firstValue,
+        temperature: double.parse(item.secondValue!),
         title: item.title,
       );
     case InformationType.dimmer:
       return LightDimmerCard(
-        room: item.room(),
+        room: item.room,
         title: item.title,
-        brightness: double.parse(item.value),
+        brightness: double.parse(item.firstValue),
       );
     case InformationType.fan:
       return FanCard(
-        room: item.room(),
+        room: item.room,
         title: item.title,
-        isOn: item.value == "true",
+        isOn: item.firstValue == "true",
       );
     case InformationType.led:
       return LedCard(information: item);
     case InformationType.scene:
       return SceneCard(information: item, executeScene: executeScene);
     case InformationType.camera:
-      return ReolinkCard(title: item.title, rtspUrl: item.value);
+      return ReolinkCard(title: item.title, rtspUrl: item.firstValue);
     case InformationType.launcher:
       return AppLaunchCard(
         title: item.title,
-        methodName: item.value,
-        icon: item.icon!,
+        methodName: item.firstValue,
+        icon: item.secondValue!,
       );
-    case InformationType.co2:
+    case InformationType.voc:
       return Co2Card(information: item);
     case InformationType.energy:
-      return EnergyCard(information:item);
+      return EnergyCard(information: item);
     default:
       return const SizedBox();
   }

@@ -1,6 +1,8 @@
 package tools.vlab.kberry.app.commands;
 
 import io.vertx.core.json.JsonObject;
+import tools.vlab.kberry.app.Haus;
+import tools.vlab.kberry.core.PositionPath;
 import tools.vlab.kberry.core.devices.HeaterMode;
 import tools.vlab.kberry.core.devices.actor.FloorHeater;
 import tools.vlab.kberry.core.devices.actor.Jalousie;
@@ -15,6 +17,21 @@ public class HolidayStart extends Scene {
         getKnxDevices().getKNXDevices(FloorHeater.class).forEach(floorHeater -> floorHeater.setMode(HeaterMode.FROST_PROTECTION));
         getKnxDevices().getKNXDevices(Light.class).forEach(Light::off);
         getKnxDevices().getKNXDevices(Jalousie.class).forEach(Jalousie::down);
+    }
+
+    @Override
+    public PositionPath getPositionPath() {
+        return Haus.HallwayWall;
+    }
+
+    @Override
+    public String getIcon() {
+        return "beach_access_rounded";
+    }
+
+    @Override
+    public String getName() {
+        return "Urlaub Starten";
     }
 
     @Override

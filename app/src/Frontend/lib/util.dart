@@ -343,7 +343,7 @@ class IconUtil {
     "flight": Icons.flight,
     "flight_land": Icons.flight_land,
     "flight_takeoff": Icons.flight_takeoff,
-    "flashlight_off_outlined":Icons.flashlight_off_outlined,
+    "flashlight_off_outlined": Icons.flashlight_off_outlined,
     "flip": Icons.flip,
     "flip_to_back": Icons.flip_to_back,
     "flip_to_front": Icons.flip_to_front,
@@ -392,7 +392,16 @@ class IconUtil {
     "local_movies_outlined": Icons.local_movies_outlined,
     "local_movies_rounded": Icons.local_movies_rounded,
     "phone": Icons.phone,
-    "tv": Icons.tv
+    "tv": Icons.tv,
+    "light_time_on": Icons.wb_twighlight,
+    "light_time_off": Icons.wb_sunny,
+    "mode_night": Icons.mode_night,
+    "beach_access_rounded": Icons.beach_access_rounded,
+    "local_movies": Icons.local_movies,
+    "beach_access_outlined": Icons.beach_access_outlined,
+    "flashlight_off": Icons.flashlight_off,
+    "keyboard_arrow_down": Icons.keyboard_arrow_down,
+    "keyboard_arrow_up": Icons.keyboard_arrow_up,
   };
 
   /// Gibt das Icon zurück oder Icons.help_outline als Fallback

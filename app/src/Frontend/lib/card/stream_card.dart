@@ -13,28 +13,25 @@ class HumidityCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color accent = Colors.lightBlueAccent; // Akzentfarbe für Feuchtigkeit
     final Color bgColor = const Color(0xFF3A3A3A);
-    final Color borderColor = Colors.blue.shade700;
 
     // Leichter Glow basierend auf humidityPercent
 
     double getAverage() =>
-        double.tryParse(information.extraValue ?? "0.0") ?? 0.0;
-
-    int getValue() => int.tryParse(information.value ?? "0") ?? 0;
+        double.tryParse(information.secondValue ?? "0.0") ?? 0.0;
 
     final double glowOpacity = (getAverage() / 100).clamp(0.1, 0.6);
 
     Color getAccent() {
-      if(getValue() < 30) {
+      if(getAverage() < 30) {
         return Colors.yellowAccent;
       }
-      if(getValue() < 40) {
+      if(getAverage() < 40) {
         return Colors.orangeAccent;
       }
-      if(getValue() < 60) {
+      if(getAverage() < 60) {
         return Color(0xFF3A3A3A);
       }
-      if(getValue() < 70) {
+      if(getAverage() < 70) {
         return Colors.blueAccent;
       }
       return Colors.redAccent;
@@ -64,7 +61,7 @@ class HumidityCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              information.room().toUpperCase(),
+              information.room.toUpperCase(),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
@@ -90,7 +87,7 @@ class HumidityCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              "${getValue().toStringAsFixed(1)}%",
+              "${double.parse(information.firstValue).toStringAsFixed(2)}%",
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,

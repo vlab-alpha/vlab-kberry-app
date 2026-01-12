@@ -12,7 +12,7 @@ class WeatherDialog extends StatelessWidget {
 
   /// Gibt die passende Lottie-Datei für den aktuellen Wetterzustand zurück
   String _getWeatherAnimation() {
-    final value = information.value.toLowerCase();
+    final value = information.firstValue.toLowerCase();
 
     switch (value.toLowerCase()) {
       case 'sonnig':
@@ -103,7 +103,7 @@ class WeatherDialog extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    "Raum: ${information.room()}",
+                    "Raum: ${information.room}",
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey.shade700,
@@ -126,7 +126,7 @@ class WeatherDialog extends StatelessWidget {
 
                   // --- Wetterwert oder Beschreibung ---
                   Text(
-                    information.value,
+                    information.firstValue,
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,

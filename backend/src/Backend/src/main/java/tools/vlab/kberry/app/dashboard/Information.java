@@ -15,6 +15,7 @@ public class Information {
     InformationType type;
     String password;
     String[] values;
+    protected String extendPath = null;
 
     public static Information led(PositionPath positionPath, RGB rgbw, String password) {
         return new Information(positionPath, InformationType.led, password, rgbw.toHex());
@@ -28,8 +29,10 @@ public class Information {
         return new Information(positionPath, InformationType.plug, password, isOn.toString());
     }
 
-    public static Information scene(PositionPath positionPath, Long lastExecution, String password) {
-        return new Information(positionPath, InformationType.scene, password, lastExecution.toString());
+    public static Information scene(PositionPath positionPath, String name, String icon, String password) {
+        var info = new Information(positionPath, InformationType.scene, password, name, icon);
+        info.extendPath = name;
+        return info;
     }
 
     public static Information jalousie(PositionPath positionPath, Integer position, String password) {
@@ -78,7 +81,7 @@ public class Information {
     }
 
     public String getTopic() {
-        return this.positionPath.getPath();
+        return String.join("/", this.type.name(), this.positionPath.getPath()) + (extendPath != null ? "/" + extendPath.trim() : "");
     }
 
     public Buffer toPayload() {
@@ -87,7 +90,7 @@ public class Information {
 
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
-        json.put("positionPath", this.positionPath.getPath());
+        json.put("positionPath", this.positionPath.getPath() + (extendPath != null ? "/" + extendPath.trim() : ""));
         json.put("type", type);
         if (this.password != null) {
             json.put("password", this.password);

@@ -19,6 +19,7 @@ class TemperatureDialog extends ConsumerStatefulWidget {
 class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool isComfort = true;
 
   bool _loading = true;
   bool _timeoutReached = false;
@@ -30,13 +31,57 @@ class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
   double max = 25;
   double min = 10;
 
+  double get sollwert {
+    final soll = double.tryParse(widget.information.firstValue) ?? 10.0;
+    return soll <= 10.0 ? 10.0 : soll;
+  }
+
+  double get temperature {
+    final soll = double.tryParse(widget.information.firstValue) ?? 10.0;
+    return soll <= 10.0 ? 10.0 : soll;
+  }
+
+  String getModeMessage() {
+    switch (betriebsart) {
+      case Betriebsart.COMFORT:
+        return "Komfort";
+      case Betriebsart.STANDBY:
+        return "Nacht";
+      case Betriebsart.FROST_PROTECTION:
+        return "Frostschutz";
+      case Betriebsart.NIGHT:
+        return "Nacht";
+    }
+  }
+
+  IconData get tempDirection => currentTemperature > targetTemperature + 0.3
+      ? Icons.arrow_circle_down
+      : Icons.arrow_circle_up;
+
+  Color get tempDirectionColor => currentTemperature > targetTemperature + 0.3
+      ? Colors.redAccent.shade700
+      : Colors.green.shade700;
+
+  IconData get mode {
+    switch (betriebsart) {
+      case Betriebsart.COMFORT:
+        return Icons.bed_outlined;
+      case Betriebsart.STANDBY:
+        return Icons.stop_circle;
+      case Betriebsart.FROST_PROTECTION:
+        return Icons.ac_unit;
+      case Betriebsart.NIGHT:
+        return Icons.nightlight;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
 
-    currentTemperature = double.tryParse(widget.information.value) ?? 21.0;
-    targetTemperature = 0.0;
+    currentTemperature = double.tryParse(widget.information.firstValue) ?? 21.0;
+    targetTemperature = 10.0;
 
     Future.delayed(const Duration(seconds: 5), () {
       if (_loading) {
@@ -53,11 +98,12 @@ class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
     _getFloorHeater((FloorHeater floorHeater) {
       setState(() {
         currentTemperature = floorHeater.temperatur;
-        targetTemperature = floorHeater.sollwert;
-        isError = floorHeater.error;
+        targetTemperature = floorHeater.sollwert <= 10.0
+            ? 10.0
+            : floorHeater.sollwert;
         position = floorHeater.position;
         betriebsart = floorHeater.betriebsart;
-
+        isComfort = betriebsart == Betriebsart.COMFORT;
         _loading = false; // Daten sind geladen
       });
     });
@@ -123,6 +169,28 @@ class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
     if (isError) return "Error …";
     if (currentTemperature > targetTemperature + 0.3) return "Zu warm";
     return "Temperatur im Wohlfühlbereich";
+  }
+
+  void toggleMode() {
+    _setMode(Betriebsart.COMFORT);
+  }
+
+  Future<void> _setMode(Betriebsart mode) async {
+    final service = ref.read(smartHomeServiceProvider);
+    final connected = await service.connect();
+    if (!connected) return;
+
+    service.setFloorHeaterMode(
+      widget.information.positionPath,
+      mode, (status) {
+        setState(() {
+          isComfort = true;
+        });
+      },
+    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Einstellungen übernommen')));
   }
 
   @override
@@ -197,22 +265,25 @@ class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
             unselectedLabelColor: Colors.grey,
             tabs: const [
               Tab(icon: Icon(Icons.power_settings_new), text: "Steuerung"),
+              Tab(icon: Icon(Icons.settings), text: "Einstellungen"),
               Tab(icon: Icon(Icons.auto_graph_rounded), text: "Statistics"),
             ],
           ),
 
           SizedBox(
-            height: 240,
+            height: 300,
             child: TabBarView(
               controller: _tabController,
               children: [
+                // Settings
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
+
                       Text(
-                        "Raum: ${widget.information.room()}",
+                        "Raum: ${widget.information.room}",
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey.shade800,
@@ -232,6 +303,7 @@ class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
                             position: position, // Wert 0–100 vom Regler
                             height: 100,
                           ),
+                          const SizedBox(width: 10),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -250,16 +322,56 @@ class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              Text(
-                                _statusText(),
-                                style: TextStyle(
-                                  color: _statusColor(),
-                                  fontSize: 14,
-                                ),
+                              Row(
+                                children: [
+                                  Icon(mode, color: Colors.black38),
+                                  Text(
+                                    "${getModeMessage()} - Modus",
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
+                              Row(
+                                children: [
+                                  Icon(tempDirection, color: tempDirectionColor),
+                                  Text(
+                                    _statusText(),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
                             ],
                           ),
+
                         ],
+                      ),
+                      const SizedBox(height: 8),
+                      FilledButton.icon(
+                        onPressed: toggleMode,
+                        icon: Icon(
+                          isComfort ? Icons.sunny : Icons.nightlight,
+                          size: 18,
+                        ),
+                        label: Text(
+                          isComfort ? "Nachtmodus" : "Komfort",
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: isComfort
+                              ? Colors.black45
+                              : Colors.green.shade400,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(200, 40),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Slider(
@@ -279,13 +391,22 @@ class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
                   ),
                 ),
 
+                // Settings
+                SettingsView(
+                  positionPath: widget.information.positionPath,
+                  type: widget.information.type,
+                ),
+
+                // Statistics
                 FutureBuilder<List<Map<String, dynamic>>>(
                   future: _getTemperaturStatisticsAsync(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
                     } else if (snapshot.hasError || snapshot.data == null) {
-                      return const Center(child: Text("Fehler beim Laden der Daten"));
+                      return const Center(
+                        child: Text("Fehler beim Laden der Daten"),
+                      );
                     } else {
                       return Padding(
                         padding: const EdgeInsets.all(12.0),

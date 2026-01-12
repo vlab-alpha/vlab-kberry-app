@@ -26,7 +26,7 @@ public class GetLEDCommand extends Command {
 
     @Override
     public CommandTopic topic() {
-        return Commands.GET_LED;
+        return Commands.GET_LED_COLOR;
     }
 
     @Override

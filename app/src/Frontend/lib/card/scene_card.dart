@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../model/data.dart';
 import '../util.dart';
 
-
 class SceneCard extends StatefulWidget {
   final Information information;
   final Future<void> Function(String positionPath, String title) executeScene;
@@ -38,7 +37,10 @@ class _SceneCardState extends State<SceneCard>
   }
 
   void _triggerScene() async {
-    widget.executeScene(widget.information.positionPath, widget.information.title);
+    widget.executeScene(
+      widget.information.positionPath,
+      widget.information.title,
+    );
     // Aktiviere Glow
     setState(() => _activated = true);
     _controller.forward(from: 0);
@@ -80,7 +82,7 @@ class _SceneCardState extends State<SceneCard>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                widget.information.room().toUpperCase(),
+                widget.information.room.toUpperCase(),
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
@@ -91,13 +93,13 @@ class _SceneCardState extends State<SceneCard>
               const SizedBox(height: 8),
 
               // Optionales Szenen-Symbol (z. B. Sonne, Mond, Film etc.)
-              if (widget.information.icon != null)
-                Icon(
-                  IconUtil.getIconFromString(widget.information.icon),
-                  size: 30,
-                  color: accent,
+              Icon(
+                IconUtil.getIconFromString(
+                  widget.information.secondValue ?? "ac_unit",
                 ),
-
+                size: 30,
+                color: accent,
+              ),
               const SizedBox(height: 6),
 
               // Play-Button
@@ -105,8 +107,12 @@ class _SceneCardState extends State<SceneCard>
                 animation: _controller,
                 builder: (context, child) {
                   final glow = Tween<double>(begin: 1.0, end: 1.3)
-                      .animate(CurvedAnimation(
-                      parent: _controller, curve: Curves.easeOut))
+                      .animate(
+                        CurvedAnimation(
+                          parent: _controller,
+                          curve: Curves.easeOut,
+                        ),
+                      )
                       .value;
                   return Transform.scale(
                     scale: glow,
@@ -122,7 +128,7 @@ class _SceneCardState extends State<SceneCard>
               const SizedBox(height: 8),
 
               Text(
-                widget.information.title,
+                widget.information.firstValue,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,

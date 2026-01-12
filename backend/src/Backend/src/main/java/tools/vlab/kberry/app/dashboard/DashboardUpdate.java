@@ -5,41 +5,62 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.mqtt.MqttClient;
+import lombok.Getter;
+import tools.vlab.kberry.app.Haus;
 import tools.vlab.kberry.core.PositionPath;
 import tools.vlab.kberry.core.devices.KNXDevice;
 import tools.vlab.kberry.core.devices.KNXDevices;
-import tools.vlab.kberry.core.devices.Scene;
 import tools.vlab.kberry.core.devices.actor.*;
 import tools.vlab.kberry.core.devices.sensor.*;
+import tools.vlab.kberry.server.commands.Scene;
+import tools.vlab.kberry.server.statistics.Statistics;
 
+import java.util.List;
 import java.util.Set;
 
 public class DashboardUpdate extends AbstractVerticle {
 
     private final KNXDevices knxDevices;
+    @Getter
+    private final Statistics statistics;
     private final String mqttAddress;
     private final int port;
     private final String password;
     private final Set<PositionPath> passwordRequired;
+    private final List<Scene> scenes;
     private long timerId;
     private MqttClient client;
 
-    public DashboardUpdate(KNXDevices knxDevices, String mqttAddress, int port, String password, Set<PositionPath> passwordRequired) {
+    public DashboardUpdate(KNXDevices knxDevices, Statistics statistics, String mqttAddress, int port, String password, Set<PositionPath> passwordRequired, List<Scene> scenes) {
         this.knxDevices = knxDevices;
+        this.statistics = statistics;
         this.mqttAddress = mqttAddress;
         this.port = port;
         this.password = password;
         this.passwordRequired = passwordRequired;
+        this.scenes = scenes;
     }
 
     @Override
-    public void start(Promise<Void> startPromise) throws Exception {
+    public void start(Promise<Void> startPromise) {
         client = MqttClient.create(vertx);
         client.connect(port, mqttAddress)
                 .compose(none -> {
-                    timerId = vertx.setPeriodic(1000, l -> {
-                        publishRoomSpecificData();
-                        publishSpecificPositionData();
+                    publishAllScene();
+                    return Future.succeededFuture();
+                })
+                .compose(none -> {
+                    timerId = vertx.setPeriodic(5000, l -> {
+                        this.publishHumidity();
+                        this.publishElectricity();
+                        this.publishJalousie();
+                        this.publishLight();
+                        this.publishUsage();
+                        this.publishVOC();
+                        this.publishPlugs();
+                        this.publishLED();
+                        this.publishHeater();
+                        this.publishDimmer();
                     });
                     return Future.succeededFuture();
                 }).onComplete(res -> startPromise.complete())
@@ -47,96 +68,97 @@ public class DashboardUpdate extends AbstractVerticle {
     }
 
     private void publish(Information information) {
-        this.client.publish(information.getTopic(), information.toPayload(), MqttQoS.AT_MOST_ONCE, false, true);
+        this.client.publish("DASHBOARD/" + information.getTopic(), information.toPayload(), MqttQoS.AT_MOST_ONCE, false, true);
     }
 
-    private void publishRoomSpecificData() {
-        knxDevices.getAllRooms().forEach(room -> {
-
-            // Light
-            var light = knxDevices.getKNXDeviceByRoom(Light.class, room);
-            var lux = knxDevices.getKNXDeviceByRoom(LuxSensor.class, room);
-            if (light.isPresent()) {
-                publish(Information.light(room,
-                        light.get().isOn(),
-                        lux.map(LuxSensor::getCurrentLux).orElse(0.0f),
-                        getPassword(light.get())));
-            } else lux.ifPresent(sensor -> publish(Information.lux(room,
-                    sensor.getCurrentLux(),
-                    getPassword(sensor))));
-
-            // FloorHeater
-            var temperatur = knxDevices.getKNXDeviceByRoom(TemperatureSensor.class, room);
-            var floorHeater = knxDevices.getKNXDeviceByRoom(FloorHeater.class, room);
-            if (floorHeater.isPresent() && temperatur.isPresent()) {
-                publish(Information.floorHeater(room,
-                        floorHeater.get().getCurrentActuatorPosition(),
-                        temperatur.get().getCurrentTemp(),
-                        getPassword(floorHeater.get())));
-            } else {
-                temperatur.ifPresent(temperatureSensor -> publish(Information.temperature(room,
-                        temperatureSensor.getCurrentTemp(),
-                        getPassword(temperatureSensor))));
-            }
-
-            // TODO: Humidity and Voc Sensor combine with Fan
-
+    private void publishLight() {
+        this.knxDevices.getKNXDevices(Light.class).forEach(device -> {
+            var lux = this.knxDevices.getKNXDeviceByRoom(LuxSensor.class, device.getPositionPath());
+            publish(Information.light(device.getPositionPath(),
+                    device.isOn(),
+                    lux.map(LuxSensor::getSmoothedLux).orElse(0.0f),
+                    getPassword(device)));
         });
     }
 
-
-    private void publishSpecificPositionData() {
-        knxDevices.getAllPositionPaths().forEach(path -> {
-            knxDevices.getKNXDevice(Plug.class, path).ifPresent(plug -> publish(Information.plug(
-                    plug.getPositionPath(),
-                    plug.isOn(),
-                    getPassword(plug))));
-
-            knxDevices.getKNXDevice(PresenceSensor.class, path).ifPresent(sensor -> publish(Information.presence(
-                    sensor.getPositionPath(),
-                    sensor.getLastPresentSecond(),
-                    sensor.isPresent(),
-                    getPassword(sensor))));
-
-            knxDevices.getKNXDevice(VOCSensor.class, path).ifPresent(sensor -> publish(Information.voc(
-                    sensor.getPositionPath(),
-                    sensor.getCurrentPPM(),
-                    getPassword(sensor))));
-
-            knxDevices.getKNXDevice(Dimmer.class, path).ifPresent(sensor -> publish(Information.dimmer(
-                    sensor.getPositionPath(),
-                    sensor.getCurrentBrightness(),
-                    getPassword(sensor))));
-
-            knxDevices.getKNXDevice(HumiditySensor.class, path).ifPresent(sensor -> publish(Information.humidity(
-                    sensor.getPositionPath(),
-                    sensor.getCurrentHumidity(),
-                    getPassword(sensor))));
-
-            knxDevices.getKNXDevice(ElectricitySensor.class, path).ifPresent(sensor -> publish(Information.electricity(
-                    sensor.getPositionPath(),
-                    sensor.getCurrentKWH(),
-                    getPassword(sensor))));
-
-            knxDevices.getKNXDevice(Jalousie.class, path).ifPresent(sensor -> publish(Information.jalousie(
-                    sensor.getPositionPath(),
-                    sensor.currentPosition(),
-                    getPassword(sensor))));
-
-            knxDevices.getKNXDevice(Led.class, path).ifPresent(sensor -> publish(Information.led(
-                    sensor.getPositionPath(),
-                    sensor.getRGB(),
-                    getPassword(sensor))));
-
-            knxDevices.getKNXDevice(Scene.class, path).ifPresent(sensor -> publish(Information.scene(
-                    sensor.getPositionPath(),
-                    sensor.getLastExecution(),
-                    getPassword(sensor))));
+    private void publishHeater() {
+        this.knxDevices.getKNXDevices(FloorHeater.class).forEach(floorHeater -> {
+            var temperatur = knxDevices.getKNXDeviceByRoom(TemperatureSensor.class, floorHeater.getPositionPath());
+            publish(Information.floorHeater(floorHeater.getPositionPath(),
+                    floorHeater.getActuatorPositionPercent(),
+                    temperatur.map(TemperatureSensor::getCurrentTemp).orElse(0f),
+                    getPassword(floorHeater)));
         });
     }
+
+    private void publishPlugs() {
+        this.knxDevices.getKNXDevices(Plug.class).forEach(plug -> publish(Information.plug(
+                plug.getPositionPath(),
+                plug.isOn(),
+                getPassword(plug))));
+    }
+
+    private void publishUsage() {
+        this.knxDevices.getKNXDevices(PresenceSensor.class).forEach(sensor -> publish(Information.presence(
+                sensor.getPositionPath(),
+                sensor.getLastPresentSecond(),
+                sensor.isPresent(),
+                getPassword(sensor))));
+    }
+
+    private void publishVOC() {
+        this.knxDevices.getKNXDevices(VOCSensor.class).forEach(sensor -> publish(Information.voc(
+                sensor.getPositionPath(),
+                sensor.getCurrentPPM(),
+                getPassword(sensor))));
+    }
+
+    private void publishHumidity() {
+        this.knxDevices.getKNXDevices(HumiditySensor.class).forEach(sensor -> publish(Information.humidity(
+                sensor.getPositionPath(),
+                sensor.getCurrentHumidity(),
+                getPassword(sensor))));
+    }
+
+    private void publishElectricity() {
+        this.knxDevices.getKNXDevices(ElectricitySensor.class).forEach(sensor -> publish(Information.electricity(
+                sensor.getPositionPath(),
+                sensor.getCurrentKWH(),
+                getPassword(sensor))));
+    }
+
+    private void publishJalousie() {
+        this.knxDevices.getKNXDevices(Jalousie.class).forEach(jalousie -> publish(Information.jalousie(
+                jalousie.getPositionPath(),
+                jalousie.getCurrentPositionPercent(),
+                getPassword(jalousie))));
+    }
+
+    private void publishLED() {
+        this.knxDevices.getKNXDevices(Led.class).forEach(jalousie -> publish(Information.led(
+                jalousie.getPositionPath(),
+                jalousie.getRGB(),
+                getPassword(jalousie))));
+    }
+
+    private void publishDimmer() {
+        this.knxDevices.getKNXDevices(Dimmer.class).forEach(dimmer -> publish(Information.dimmer(
+                dimmer.getPositionPath(),
+                dimmer.getCurrentBrightness(),
+                getPassword(dimmer))));
+    }
+
+    private void publishAllScene() {
+        this.scenes.forEach(scene -> publish(Information.scene(scene.getPositionPath(), scene.getName(), scene.getIcon(), getPassword(scene))));
+    }
+
 
     private String getPassword(KNXDevice device) {
         return passwordRequired.contains(device.getPositionPath()) ? password : null;
+    }
+
+    private String getPassword(Scene scene) {
+        return passwordRequired.contains(scene.getPositionPath()) ? password : null;
     }
 
 

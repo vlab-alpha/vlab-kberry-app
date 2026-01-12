@@ -10,7 +10,7 @@ class LedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Hex-Farbe aus information.value
-    final hex = information.value ?? "#00000000"; // default schwarz
+    final hex = information.firstValue ?? "#00000000"; // default schwarz
     final rgbw = _hexToRgbw(hex);
 
     final int r = rgbw[0];

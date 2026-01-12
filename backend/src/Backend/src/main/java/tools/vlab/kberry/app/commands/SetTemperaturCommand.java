@@ -22,7 +22,7 @@ public class SetTemperaturCommand extends Command {
 
     @Override
     public CommandTopic topic() {
-        return Commands.SET_TEMPERATURE;
+        return Commands.SET_TEMPERATURE_POINT;
     }
 
     @Override

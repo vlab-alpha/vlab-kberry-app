@@ -14,7 +14,7 @@ public class SetJalousieReferenceCommand extends Command {
 
     @Override
     public Future<Optional<JsonObject>> execute(JsonObject message) {
-        PositionPath positionPath = Haus.valueOf(message.getString("positionPath"));
+        PositionPath positionPath = Haus.positionPath(message.getString("positionPath"));
         var jalousie = this.getKnxDevices().getKNXDevice(Jalousie.class, positionPath);
         jalousie.ifPresent(Jalousie::referenceDriving);
         return Future.succeededFuture(Optional.empty());

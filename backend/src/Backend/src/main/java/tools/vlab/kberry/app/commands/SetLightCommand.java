@@ -29,7 +29,7 @@ public class SetLightCommand extends Command {
 
     @Override
     public CommandTopic topic() {
-        return Commands.SET_LIGHT;
+        return Commands.SET_LIGHT_STATUS;
     }
 
     @Override

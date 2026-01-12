@@ -25,7 +25,7 @@ public class GetPlugCommand extends Command {
 
     @Override
     public CommandTopic topic() {
-        return Commands.GET_PLUG;
+        return Commands.GET_PLUG_STATUS;
     }
 
 

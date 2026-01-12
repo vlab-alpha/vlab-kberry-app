@@ -28,12 +28,12 @@ class InfoDialog extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              "Raum: ${information.room()}",
+              "Raum: ${information.room}",
               style: const TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 8),
             Text(
-              "Wert: ${information.value}",
+              "Wert: ${information.firstValue}",
               style: const TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 16),

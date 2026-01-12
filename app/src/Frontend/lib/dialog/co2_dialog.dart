@@ -12,8 +12,8 @@ class Co2Dialog extends StatelessWidget {
     this.maxCo2 = 2000, // typischer CO₂-Grenzwert
   });
 
-  double get ppmValue => double.tryParse(information.value) ?? 0.0;
-  String get level => information.value; // z. B. "Niedrig", "Mittel", "Hoch", "Kritisch"
+  double get ppmValue => double.tryParse(information.firstValue) ?? 0.0;
+
   bool get isAlarm => ppmValue >= maxCo2;
 
   Color get _levelColor {
@@ -28,6 +28,20 @@ class Co2Dialog extends StatelessWidget {
     if (ppmValue < 1200) return "Leicht erhöht";
     if (ppmValue < 2000) return "Zu hoch";
     return "Kritischer Wert!";
+  }
+
+  String get _level {
+    if (ppmValue < 800) {
+      return "Sehr gut";
+    } else if (ppmValue < 1000) {
+      return "Gut";
+    } else if (ppmValue < 1400) {
+      return "Mäßig";
+    } else if (ppmValue < 2000) {
+      return "Schlecht";
+    } else {
+      return "Sehr schlecht";
+    }
   }
 
   @override
@@ -90,7 +104,7 @@ class Co2Dialog extends StatelessWidget {
             const SizedBox(height: 16),
 
             Text(
-              "Raum: ${information.room()}",
+              "Raum: ${information.room}",
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey.shade800,
@@ -130,7 +144,7 @@ class Co2Dialog extends StatelessWidget {
 
             // --- Stufe (z. B. Hoch, Kritisch) ---
             Text(
-              level,
+              _level,
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,

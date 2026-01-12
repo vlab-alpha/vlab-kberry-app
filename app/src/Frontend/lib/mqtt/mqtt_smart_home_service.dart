@@ -2,8 +2,6 @@ import 'dart:convert';
 import '../model/data.dart';
 import 'package:logger/logger.dart';
 import '../config.dart';
-
-import '../model/Position.dart';
 import 'mqtt_client.dart';
 
 final log = Logger();
@@ -18,7 +16,7 @@ class SmartHomeService {
 
   final String broker;
   final int port;
-  Mqtt5Client? _client = null;
+  Mqtt5Client? _client;
 
   SmartHomeService._internal({required this.broker, required this.port});
 
@@ -71,25 +69,27 @@ class SmartHomeService {
   ) {
     _client?.subscribeAll("DASHBOARD", (jsonString, topic) {
       final body = jsonDecode(jsonString);
+      final positionPath = body["positionPath"] ?? "";
+      final values = (body["values"] as List<dynamic>? )
+          ?.map((e) => e.toString())
+          .toList()
+          ?? <String>[];
       final info = Information(
-        positionPath: body["positionPath"] ?? "",
-        value: body["value"] ?? "",
-        title: body["title"] ?? "",
+        positionPath: positionPath,
+        values: values,
         type: InformationType.values.firstWhere(
           (e) =>
               e.name.toLowerCase() == (body["type"] as String?)?.toLowerCase(),
           orElse: () => InformationType.alle,
         ),
-        password: body["password"],
-        extraValue: body["extraValue"] ?? "",
-        icon: body["icon"],
+        password: body["password"]
       );
       onMessage(info, topic);
     });
   }
 
   void getPositionPaths(void Function(List<String> positionPaths) onMessage) {
-    _client?.request("get/all/positionPaths", "", (bodyString, topic) {
+    _client?.request("get/position/paths", "", (bodyString, topic) {
       final body = jsonDecode(bodyString);
       final paths = (body["paths"] as List).cast<String>();
       onMessage(paths);
@@ -196,7 +196,7 @@ class SmartHomeService {
     void Function(double position) onMessage,
   ) {
     _client?.request(
-      "get/jalousie/status",
+      "get/jalousie/position",
       jsonEncode({"positionPath": positionPath}),
       (bodyString, topic) {
         final body = jsonDecode(bodyString);
@@ -211,7 +211,7 @@ class SmartHomeService {
     void Function(double position) onMessage,
   ) {
     _client?.request(
-      "set/jalousie/stopp",
+      "set/jalousie/stop",
       jsonEncode({"positionPath": positionPath}),
       (bodyString, topic) {
         final body = jsonDecode(bodyString);
@@ -242,7 +242,7 @@ class SmartHomeService {
     void Function(double position) onMessage,
   ) {
     _client?.request(
-      "set/jalousie/status",
+      "set/jalousie/position",
       jsonEncode({"positionPath": positionPath, "position": position.toInt()}),
       (bodyString, topic) {
         final body = jsonDecode(bodyString);
@@ -289,15 +289,16 @@ class SmartHomeService {
     );
   }
 
-  void getUsage(String positionPath, void Function(String, int) onMessage) {
+  void getUsage(String positionPath, void Function(String, int, double) onMessage) {
     _client?.request(
-      "get/usage/status",
+      "get/usage/data",
       jsonEncode({"positionPath": positionPath}),
       (bodyString, topic) {
         final body = jsonDecode(bodyString);
         final usedLastMinutes = body["usedLastMinutes"] as int? ?? 0;
+        final usage = body["usage"] as double? ?? 0.0;
         final isUsed = body["used"] as String? ?? "Unknown";
-        onMessage(isUsed, usedLastMinutes);
+        onMessage(isUsed, usedLastMinutes, usage);
       },
     );
   }
@@ -307,7 +308,7 @@ class SmartHomeService {
     void Function(FloorHeater floorheater) onMessage,
   ) {
     _client?.request(
-      "get/temperature/status",
+      "get/temperature/data",
       jsonEncode({"positionPath": positionPath}),
       (bodyString, topic) {
         final body = jsonDecode(bodyString);
@@ -320,13 +321,11 @@ class SmartHomeService {
           orElse: () => Betriebsart.STANDBY,
         );
         final sollwert = body["sollwert"] as double? ?? 0.0;
-        final error = body["error"] as bool? ?? false;
         final position = body["position"] as int? ?? 0;
         onMessage(
           FloorHeater(
             temperatur: temperatur,
             sollwert: sollwert,
-            error: error,
             position: position,
             betriebsart: betriebsart,
           ),
@@ -341,7 +340,7 @@ class SmartHomeService {
     void Function(String hex) onMessage,
   ) {
     _client?.request(
-      "set/led/status",
+      "set/led/color",
       jsonEncode({"positionPath": positionPath, "hex": hex}),
       (bodyString, topic) {
         final body = jsonDecode(bodyString);
@@ -357,7 +356,7 @@ class SmartHomeService {
     void Function(bool success) onMessage,
   ) {
     _client?.request(
-      "set/temperature/sollwert",
+      "set/temperature/point",
       jsonEncode({"positionPath": positionPath, "temperature": temperature}),
       (bodyString, topic) {
         final body = jsonDecode(bodyString);
@@ -388,7 +387,7 @@ class SmartHomeService {
     void Function(List<Map<String, dynamic>> data) onMessage,
   ) {
     _client?.request(
-      "get/statistics/temperatur",
+      "get/temperatur/statistics",
       jsonEncode({"positionPath": positionPath}),
       (bodyString, topic) {
         try {
@@ -403,9 +402,7 @@ class SmartHomeService {
                 ? int.tryParse(tDyn) ?? 0
                 : 0;
 
-            final DateTime time = tInt != null
-                ? DateTime.fromMillisecondsSinceEpoch(tInt)
-                : DateTime.now();
+            final DateTime time = DateTime.fromMillisecondsSinceEpoch(tInt);
             var temp = item["temp"] as double;
             return {
               'time': time,

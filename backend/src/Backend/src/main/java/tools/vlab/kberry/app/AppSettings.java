@@ -4,7 +4,8 @@ import lombok.Data;
 
 @Data
 public class AppSettings {
-    private String username;
+    private String iCloudUsername;
+    private String iCloudPassword;
     private String password;
     private String mqttHost;
     private int mqttPort;

@@ -12,7 +12,7 @@ class EnergyDialog extends StatelessWidget {
     this.maxConsumption = 20, // z. B. >20 kWh/Tag = Warnung
   });
 
-  double get energyValue => double.tryParse(information.value) ?? 0.0;
+  double get energyValue => double.tryParse(information.firstValue) ?? 0.0;
   bool get isAlarm => energyValue >= maxConsumption;
 
   Color get _levelColor {
@@ -97,7 +97,7 @@ class EnergyDialog extends StatelessWidget {
             const SizedBox(height: 16),
 
             Text(
-              "Bereich: ${information.room()}",
+              "Bereich: ${information.room}",
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey.shade800,
