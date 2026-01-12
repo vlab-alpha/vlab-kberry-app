@@ -19,8 +19,6 @@ import tools.vlab.kberry.core.devices.actor.Light;
 import tools.vlab.kberry.core.devices.actor.Plug;
 import tools.vlab.kberry.core.devices.sensor.*;
 import tools.vlab.kberry.server.KBerryServer;
-import tools.vlab.kberry.server.logic.AutoLightOnLogic;
-import tools.vlab.kberry.server.logic.AutoPresenceOffLogic;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -162,18 +160,8 @@ public class Main {
                 .register(LuxSensor.at(Haus.KidsRoomBlueTop, intervalUpdateMs))
                 .register(LuxSensor.at(Haus.OfficeTop, intervalUpdateMs))
 
-                //
                 .register(TemperatureSensor.at(Haus.ChangingRoomFloor, intervalUpdateMs))
 
-                // Default Logic
-//                .logic(AutoLightOnLogic.at(50, Haus.BathTop))
-//                .logic(AutoPresenceOffLogic.at(60, Haus.BathTop))
-//                .logic(AutoLightOnLogic.at(Haus.BathTop))
-//                .logic(AutoPresenceOffLogic.at(60 * 5, Haus.BathTop))
-//                .logic(AutoLightOnLogic.at(Haus.HallwayTop))
-//                .logic(AutoPresenceOffLogic.at(60 * 3, Haus.HallwayTop))
-//                .logic(AutoLightOnLogic.at(Haus.GuestWC_Top))
-//                .logic(AutoPresenceOffLogic.at(5 * 60, Haus.GuestWC_Top))
                 // Service Provider
 //                .setICloudCalender(settings.getICloudUsername(), settings.getICloudPassword(), settings.getCalendarUrl())
                 // Commands
@@ -210,8 +198,6 @@ public class Main {
                 .command(new StartMovie())
                 .command(new SetFloorHeaterSettingsCommand(floorHeaterSettings))
                 .build();
-
-        // FIXME: Scene besitzt den selben Pfad!!!
 
         vertx.deployVerticle(new DashboardUpdate(server.getDevices(), server.getStatistics(), settings.getMqttHost(), settings.getMqttPort(), settings.getPassword(), passwordRequired, server.getScenes()));
         try {
