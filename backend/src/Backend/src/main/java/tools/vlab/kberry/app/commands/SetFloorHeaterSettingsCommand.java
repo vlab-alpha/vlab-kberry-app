@@ -25,7 +25,7 @@ public class SetFloorHeaterSettingsCommand extends Command {
     public Future<Optional<JsonObject>> execute(JsonObject message) {
         Haus positionPath = Haus.positionPath(message.getString("positionPath"));
         var heater = FloorHeater.fromSettings(message.getJsonArray("settings").stream().map(o -> ((JsonObject) o)).toList());
-        setHeaterSchedule(heater, positionPath);
+        initSettings(positionPath, heater);
         return this.settings
                 .setSettingAsync(positionPath, heater)
                 .map(none -> Optional.empty());
@@ -38,23 +38,26 @@ public class SetFloorHeaterSettingsCommand extends Command {
 
     @Override
     public void init() {
-
+        this.getKnxDevices().getKNXDevices(tools.vlab.kberry.core.devices.actor.FloorHeater.class).forEach(jalousie -> {
+            var setting = this.settings.getSetting(jalousie.getPositionPath());
+            setting.ifPresent(value -> initSettings(jalousie.getPositionPath(), value));
+        });
     }
 
-    private void setHeaterSchedule(FloorHeater heater, PositionPath positionPath) {
+    private void initSettings(PositionPath positionPath, FloorHeater setting) {
         var device = this.getKnxDevices().getKNXDeviceByRoom(tools.vlab.kberry.core.devices.actor.FloorHeater.class, positionPath);
-        if (heater.isNightSetback() && device.isPresent()) {
-            this.start(
-                    positionPath.getPath() + "_night_setback_start",
-                    Daily.trigger(heater.getStartTime()),
+        if (setting.isNightSetback() && device.isPresent()) {
+            this.register(
+                    positionPath, "night_setback_start",
+                    Daily.trigger(setting.getStartTime()),
                     () -> device.get().setMode(HeaterMode.COMFORT));
-            this.start(
-                    positionPath.getPath() + "_night_setback_end",
-                    Daily.trigger(heater.getStartTime()),
+            this.register(
+                    positionPath, "night_setback_end",
+                    Daily.trigger(setting.getStartTime()),
                     () -> device.get().setMode(HeaterMode.NIGHT));
         } else {
-            this.stop(positionPath.getPath() + "_night_setback_start");
-            this.stop(positionPath.getPath() + "_night_setback_end");
+            this.unregister(positionPath, "night_setback_start");
+            this.unregister(positionPath, "night_setback_end");
         }
     }
 }

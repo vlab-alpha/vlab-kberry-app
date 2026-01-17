@@ -25,7 +25,7 @@ public class GetDimmerCommand extends Command {
                 .compose(setting -> {
                     var device = this.getKnxDevices().getKNXDevice(Dimmer.class, positionPath);
                     if (device.isPresent()) {
-                        int percent = device.get().getCurrentBrightness();
+                        int percent = device.get().getBrightnessPercent();
                         return Future.succeededFuture(Optional.of(new JsonObject()
                                 .put("value", percent)
                                 .put("min", setting.getMinDimValue())

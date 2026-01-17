@@ -21,6 +21,7 @@ class _JalousieDialogState extends ConsumerState<JalousieDialog>
   double shutterPosition = 0.0; // 0 = oben, 100 = unten
   bool isMoving = false;
   bool isLocked = false;
+  bool isLock = false;
 
   // Automatik
   bool autoDayNight = false;
@@ -34,7 +35,7 @@ class _JalousieDialogState extends ConsumerState<JalousieDialog>
 
     // initial aus Information laden
     shutterPosition = double.tryParse(widget.information.firstValue) ?? 0.0;
-    _getPosition((double position){
+    _getPosition((double position) {
       setState(() {
         shutterPosition = position;
         isMoving = false;
@@ -46,7 +47,9 @@ class _JalousieDialogState extends ConsumerState<JalousieDialog>
     final service = ref.read(smartHomeServiceProvider);
     final connected = await service.connect();
     if (!connected) return;
-    service.setJalousie(widget.information.positionPath, position, (double position){
+    service.setJalousie(widget.information.positionPath, position, (
+      double position,
+    ) {
       setState(() {
         shutterPosition = position;
       });
@@ -106,11 +109,32 @@ class _JalousieDialogState extends ConsumerState<JalousieDialog>
     _monitorPosition();
   }
 
+  void _lock() async {
+    _setLock(true);
+  }
+
+  void _unlock() async {
+    _setLock(false);
+  }
+
+  void _setLock(bool lock) async {
+    final service = ref.read(smartHomeServiceProvider);
+    final connected = await service.connect();
+    if (!connected) return;
+    service.lockJalousie(widget.information.positionPath, lock, (pLock) {
+      setState(() {
+        isLock = pLock;
+      });
+    });
+  }
+
   void _stopp() async {
     final service = ref.read(smartHomeServiceProvider);
     final connected = await service.connect();
     if (!connected) return;
-    service.setStoppJalousie(widget.information.positionPath, (double position) {
+    service.setStoppJalousie(widget.information.positionPath, (
+      double position,
+    ) {
       setState(() {
         shutterPosition = position;
       });
@@ -121,7 +145,9 @@ class _JalousieDialogState extends ConsumerState<JalousieDialog>
     final service = ref.read(smartHomeServiceProvider);
     final connected = await service.connect();
     if (!connected) return;
-    service.setReferenceJalousie(widget.information.positionPath, (double position) {
+    service.setReferenceJalousie(widget.information.positionPath, (
+      double position,
+    ) {
       setState(() {
         shutterPosition = position;
       });
@@ -170,10 +196,7 @@ class _JalousieDialogState extends ConsumerState<JalousieDialog>
       insetPadding: const EdgeInsets.all(16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: 450,
-          maxWidth: 600,
-        ),
+        constraints: BoxConstraints(maxHeight: 450, maxWidth: 600),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -181,8 +204,9 @@ class _JalousieDialogState extends ConsumerState<JalousieDialog>
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
               decoration: BoxDecoration(
-                borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
                 color: Colors.blueGrey.shade800,
               ),
               child: Row(
@@ -227,13 +251,17 @@ class _JalousieDialogState extends ConsumerState<JalousieDialog>
                   // Steuerung-Tab
                   SingleChildScrollView(
                     padding: const EdgeInsets.all(20),
-                    physics: const NeverScrollableScrollPhysics(), // kein Scrollen, nur anpassen
+                    physics: const NeverScrollableScrollPhysics(),
+                    // kein Scrollen, nur anpassen
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           "Raum: ${widget.information.room}",
-                          style: TextStyle(fontSize: 14, color: Colors.grey.shade800),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade800,
+                          ),
                         ),
                         const SizedBox(height: 4),
 
@@ -245,14 +273,16 @@ class _JalousieDialogState extends ConsumerState<JalousieDialog>
                               icon: const Icon(Icons.arrow_upward),
                               label: const Text("Hoch"),
                               style: FilledButton.styleFrom(
-                                  backgroundColor: Colors.green.shade400),
+                                backgroundColor: Colors.green.shade400,
+                              ),
                             ),
                             FilledButton.icon(
                               onPressed: _reference,
                               icon: const Icon(Icons.check),
                               label: const Text("Reference"),
                               style: FilledButton.styleFrom(
-                                  backgroundColor: Colors.blueGrey.shade400),
+                                backgroundColor: Colors.blueGrey.shade200,
+                              ),
                             ),
                           ],
                         ),
@@ -265,14 +295,38 @@ class _JalousieDialogState extends ConsumerState<JalousieDialog>
                               icon: const Icon(Icons.arrow_downward),
                               label: const Text("Runter"),
                               style: FilledButton.styleFrom(
-                                  backgroundColor: Colors.blue.shade400),
+                                backgroundColor: Colors.blue.shade400,
+                              ),
                             ),
                             FilledButton.icon(
                               onPressed: _stopp,
                               icon: const Icon(Icons.stop),
                               label: const Text("Stopp"),
                               style: FilledButton.styleFrom(
-                                  backgroundColor: Colors.redAccent.shade400),
+                                backgroundColor: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            FilledButton.icon(
+                              onPressed: _lock,
+                              icon: const Icon(Icons.lock),
+                              label: const Text("Lock"),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.red.shade900,
+                              ),
+                            ),
+                            FilledButton.icon(
+                              onPressed: _unlock,
+                              icon: const Icon(Icons.lock_open),
+                              label: const Text("Unlock"),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.green.shade400,
+                              ),
                             ),
                           ],
                         ),
@@ -280,9 +334,10 @@ class _JalousieDialogState extends ConsumerState<JalousieDialog>
                         Text(
                           _statusText(),
                           style: TextStyle(
-                              color: _statusColor(),
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold),
+                            color: _statusColor(),
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Slider(
@@ -299,9 +354,9 @@ class _JalousieDialogState extends ConsumerState<JalousieDialog>
 
                   // --- TAB 2: Einstellungen ---
                   SettingsView(
-                      positionPath: widget.information.positionPath,
-                      type: widget.information.type
-                  )
+                    positionPath: widget.information.positionPath,
+                    type: widget.information.type,
+                  ),
                 ],
               ),
             ),

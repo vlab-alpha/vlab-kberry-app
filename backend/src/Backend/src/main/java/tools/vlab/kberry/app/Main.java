@@ -3,6 +3,7 @@ package tools.vlab.kberry.app;
 import io.vertx.core.Vertx;
 import tools.vlab.kberry.app.commands.*;
 import tools.vlab.kberry.app.dashboard.DashboardUpdate;
+import tools.vlab.kberry.app.logics.AllLightOffAtNightSchedule;
 import tools.vlab.kberry.app.logics.BathSceneLogic;
 import tools.vlab.kberry.app.logics.LivingRoomSceneLogic;
 import tools.vlab.kberry.app.logics.MailService;
@@ -33,6 +34,7 @@ public class Main {
         // Mail
         var alarmLogic = new LogicIdStore();
         var mailService = new MailService(settings.getToMail(), settings.getMailHost(), settings.getMailPort(), settings.getMailUserName(), settings.getMailPassword().toCharArray());
+        vertx.deployVerticle(mailService);
 
         // Settings
         var plugSettings = new PlugSettingsVerticle("storage");
@@ -162,6 +164,7 @@ public class Main {
 
                 .register(TemperatureSensor.at(Haus.ChangingRoomFloor, intervalUpdateMs))
 
+                .scheduler(new AllLightOffAtNightSchedule())
                 // Service Provider
 //                .setICloudCalender(settings.getICloudUsername(), settings.getICloudPassword(), settings.getCalendarUrl())
                 // Commands
@@ -196,6 +199,7 @@ public class Main {
                 .command(new HolidayStart())
                 .command(new HolidayEnd())
                 .command(new StartMovie())
+                .command(new SetJalousieLock())
                 .command(new SetFloorHeaterSettingsCommand(floorHeaterSettings))
                 .build();
 

@@ -31,6 +31,28 @@ class TemperatureCard extends StatelessWidget {
     }
   }
 
+  Betriebsart get betriebsart {
+    return Betriebsart.values.firstWhere(
+      (e) =>
+          e.name.toLowerCase() ==
+          (information.thirdValue ?? "STANDBY").toLowerCase(),
+      orElse: () => Betriebsart.STANDBY,
+    );
+  }
+
+  String get betriebsartText {
+    switch(betriebsart) {
+      case Betriebsart.COMFORT:
+        return "Komfort";
+      case Betriebsart.NIGHT:
+        return "Nacht";
+      case Betriebsart.FROST_PROTECTION:
+        return "Frostschutz";
+      case Betriebsart.STANDBY:
+        return "Standby";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final Color accent = Colors.orangeAccent;
@@ -73,7 +95,7 @@ class TemperatureCard extends StatelessWidget {
 
             // Titel
             Text(
-              information.title,
+              betriebsartText,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,

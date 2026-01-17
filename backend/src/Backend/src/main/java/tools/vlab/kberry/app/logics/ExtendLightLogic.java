@@ -22,8 +22,6 @@ public class ExtendLightLogic {
     }
 
     public void disable(PositionPath positionPath) {
-        command.stop(positionPath.getId() + "_presence_on_light_start");
-        command.stop(positionPath.getId() + "_presence_on_light_end");
         autoOnLogic.getSetting(positionPath).ifPresent(logicId -> command.getLogics().unregister(logicId));
     }
 
@@ -33,23 +31,27 @@ public class ExtendLightLogic {
 
     public void setLightLogic(PositionPath positionPath, tools.vlab.kberry.app.settings.Light settings) {
         autoOffLogic.getSetting(positionPath).ifPresent(logicId -> command.getLogics().unregister(logicId));
-        command.stop(positionPath.getId() + "_presence_on_light_start");
-        command.stop(positionPath.getId() + "_presence_on_light_end");
 
         // ON
         if (settings.isPresenceOnDuringTime() && settings.isPresenceOn()) {
-            command.start(positionPath.getId() + "_presence_on_light_start", Daily.trigger(settings.getStartAutoOnTime()), () -> registerLightLogic(positionPath, settings));
-            command.start(positionPath.getId() + "_presence_on_light_end", Daily.trigger(settings.getEndStartAutoOnTime()), () -> autoOnLogic.getSetting(positionPath).ifPresent(logicId -> command.getLogics().unregister(logicId)));
+            command.register(positionPath, "presence_on_light_start", Daily.trigger(settings.getStartAutoOnTime()),
+                    () -> registerLightLogic(positionPath, settings));
+            command.register(positionPath, "presence_on_light_end", Daily.trigger(settings.getEndStartAutoOnTime()),
+                    () -> autoOnLogic.getSetting(positionPath).ifPresent(logicId -> command.getLogics().unregister(logicId)));
         } else if (settings.isPresenceOn()) {
+            command.unregister(positionPath, "presence_on_light_start");
+            command.unregister(positionPath, "presence_on_light_end");
             autoOnLogic.getSetting(positionPath).ifPresent(logicId -> command.getLogics().unregister(logicId));
             registerLightLogic(positionPath, settings);
         } else {
+            command.unregister(positionPath, "presence_on_light_start");
+            command.unregister(positionPath, "presence_on_light_end");
             autoOnLogic.getSetting(positionPath).ifPresent(logicId -> command.getLogics().unregister(logicId));
         }
 
         // OFF
         if (settings.isPresenceOff()) {
-            var logic = AutoPresenceOffLogic.at(settings.getHoldTimeMinute(), positionPath);
+            var logic = AutoPresenceOffLogic.at(settings.getHoldTimeMinute() * 60, positionPath);
             autoOffLogic.setSettingAsync(positionPath, logic.getId());
             command.getLogics().register(logic);
         }

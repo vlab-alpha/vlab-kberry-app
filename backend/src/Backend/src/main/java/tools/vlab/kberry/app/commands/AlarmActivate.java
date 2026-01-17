@@ -36,12 +36,12 @@ public class AlarmActivate extends Scene {
 
     @Override
     public String getIcon() {
-        return "alarm_off";
+        return "access_alarm";
     }
 
     @Override
     public String getName() {
-        return "Alarm Aus";
+        return "Alarm An";
     }
 
     @Override

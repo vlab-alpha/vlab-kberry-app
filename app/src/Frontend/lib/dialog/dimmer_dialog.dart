@@ -20,7 +20,7 @@ class _LightDimmerDialogState extends ConsumerState<LightDimmerDialog>
 
   int brightness = 50; // aktuelle Helligkeit (0–100)
   int targetBrightness = 50; // Sollwert
-  int minBrightness = 10; // Mindesthelligkeit
+  int minBrightness = 0; // Mindesthelligkeit
   int maxBrightness = 100; // Maximalhelligkeit
   bool isOn = true;
   Timer? _debounceTimer;

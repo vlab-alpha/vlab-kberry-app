@@ -17,7 +17,7 @@ public class SetDimmerCommand extends Command {
         var positionPath = Haus.positionPath(message.getString("positionPath"));
         var percent = message.getInteger("percent");
         var device = this.getKnxDevices().getKNXDevice(Dimmer.class, positionPath);
-        device.ifPresent(dimmer -> dimmer.setBrightness(percent));
+        device.ifPresent(dimmer -> dimmer.setBrightnessPercent(percent));
         return Future.succeededFuture(Optional.of(new JsonObject().put("percent", percent)));
     }
 

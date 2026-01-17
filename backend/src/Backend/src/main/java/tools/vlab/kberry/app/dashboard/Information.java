@@ -5,12 +5,17 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;
 import tools.vlab.kberry.core.PositionPath;
+import tools.vlab.kberry.core.devices.HeaterMode;
 import tools.vlab.kberry.core.devices.RGB;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 @Getter
 public class Information {
+
+    private final static Logger Log = LoggerFactory.getLogger(Information.class.getName());
     PositionPath positionPath;
     InformationType type;
     String password;
@@ -48,9 +53,9 @@ public class Information {
         return new Information(positionPath, InformationType.temperature, password, Double.toString(rounded));
     }
 
-    public static Information floorHeater(PositionPath positionPath, Integer actuatorPosition, Float currentTemperature, String password) {
+    public static Information floorHeater(PositionPath positionPath, Integer actuatorPosition, Float currentTemperature, HeaterMode mode, String password) {
         double rounded = Math.round(currentTemperature * 100.0) / 100.0;
-        return new Information(positionPath, InformationType.floorHeater, password, actuatorPosition.toString(), Double.toString(rounded));
+        return new Information(positionPath, InformationType.floorHeater, password, actuatorPosition.toString(), Double.toString(rounded), mode.name());
     }
 
     public static Information humidity(PositionPath positionPath, Float humidity, String password) {
@@ -90,7 +95,16 @@ public class Information {
 
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
-        json.put("positionPath", this.positionPath.getPath() + (extendPath != null ? "/" + extendPath.trim() : ""));
+        Log.debug("extendPath != null: {} und type {}", (extendPath != null), type.name());
+        if (extendPath != null) {
+            json.put("positionPath", String.join("/",
+                    this.positionPath.getLocation(),
+                    this.positionPath.getFloor(),
+                    this.positionPath.getRoom(),
+                    this.extendPath.trim()));
+        } else {
+            json.put("positionPath", this.positionPath.getPath());
+        }
         json.put("type", type);
         if (this.password != null) {
             json.put("password", this.password);

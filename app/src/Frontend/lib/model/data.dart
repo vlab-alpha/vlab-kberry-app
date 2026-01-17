@@ -47,6 +47,10 @@ class Information {
   String? get secondValue {
     return values.length > 1 ? values[1] : null;
   }
+
+  String? get thirdValue {
+    return values.length > 2 ? values[2] : null;
+  }
 }
 
 enum ValueType { Integer, Double, String, Boolean, Time }

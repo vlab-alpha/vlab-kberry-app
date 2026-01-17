@@ -27,7 +27,7 @@ public class AlarmDeactivate extends Scene {
 
     @Override
     public String getIcon() {
-        return "access_alarm";
+        return "alarm_off";
     }
 
     @Override

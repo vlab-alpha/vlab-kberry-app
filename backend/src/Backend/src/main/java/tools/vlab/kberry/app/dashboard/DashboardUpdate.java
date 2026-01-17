@@ -87,6 +87,7 @@ public class DashboardUpdate extends AbstractVerticle {
             publish(Information.floorHeater(floorHeater.getPositionPath(),
                     floorHeater.getActuatorPositionPercent(),
                     temperatur.map(TemperatureSensor::getCurrentTemp).orElse(0f),
+                    floorHeater.getCurrentMode(),
                     getPassword(floorHeater)));
         });
     }
@@ -144,7 +145,7 @@ public class DashboardUpdate extends AbstractVerticle {
     private void publishDimmer() {
         this.knxDevices.getKNXDevices(Dimmer.class).forEach(dimmer -> publish(Information.dimmer(
                 dimmer.getPositionPath(),
-                dimmer.getCurrentBrightness(),
+                dimmer.getBrightnessPercent(),
                 getPassword(dimmer))));
     }
 

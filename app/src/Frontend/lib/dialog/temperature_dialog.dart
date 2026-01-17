@@ -19,7 +19,7 @@ class TemperatureDialog extends ConsumerStatefulWidget {
 class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool isComfort = true;
+  // bool isComfort = true;
 
   bool _loading = true;
   bool _timeoutReached = false;
@@ -103,7 +103,6 @@ class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
             : floorHeater.sollwert;
         position = floorHeater.position;
         betriebsart = floorHeater.betriebsart;
-        isComfort = betriebsart == Betriebsart.COMFORT;
         _loading = false; // Daten sind geladen
       });
     });
@@ -168,11 +167,23 @@ class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
   String _statusText() {
     if (isError) return "Error …";
     if (currentTemperature > targetTemperature + 0.3) return "Zu warm";
-    return "Temperatur im Wohlfühlbereich";
+    return "Warm";
   }
 
-  void toggleMode() {
+  // void toggleMode() {
+  //   _setMode(isComfort ? Betriebsart.NIGHT : Betriebsart.COMFORT);
+  // }
+
+  setComfort(){
     _setMode(Betriebsart.COMFORT);
+  }
+
+  setNight() {
+    _setMode(Betriebsart.NIGHT);
+  }
+
+  setOff() {
+    _setMode(Betriebsart.FROST_PROTECTION);
   }
 
   Future<void> _setMode(Betriebsart mode) async {
@@ -180,14 +191,11 @@ class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
     final connected = await service.connect();
     if (!connected) return;
 
-    service.setFloorHeaterMode(
-      widget.information.positionPath,
-      mode, (status) {
-        setState(() {
-          isComfort = true;
-        });
-      },
-    );
+    service.setFloorHeaterMode(widget.information.positionPath, mode, (status) {
+      setState(() {
+        betriebsart = mode;
+      });
+    });
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Einstellungen übernommen')));
@@ -281,7 +289,6 @@ class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-
                       Text(
                         "Raum: ${widget.information.room}",
                         style: TextStyle(
@@ -326,7 +333,7 @@ class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
                                 children: [
                                   Icon(mode, color: Colors.black38),
                                   Text(
-                                    "${getModeMessage()} - Modus",
+                                    getModeMessage(),
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -336,7 +343,10 @@ class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
                               ),
                               Row(
                                 children: [
-                                  Icon(tempDirection, color: tempDirectionColor),
+                                  Icon(
+                                    tempDirection,
+                                    color: tempDirectionColor,
+                                  ),
                                   Text(
                                     _statusText(),
                                     style: const TextStyle(
@@ -346,33 +356,73 @@ class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
                                   ),
                                 ],
                               ),
-
                             ],
                           ),
+                          const SizedBox(width: 20),
+                          Column(children: [
+                            FilledButton.icon(
+                              onPressed: setComfort,
+                              icon: Icon(
+                                Icons.sunny,
+                                size: 18,
+                              ),
+                              label: Text("Komfort"),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: betriebsart == Betriebsart.COMFORT
+                                    ? Colors.green.shade800
+                                    : Colors.green.shade100,
+                                foregroundColor: betriebsart == Betriebsart.COMFORT ? Colors.white : Colors.grey.shade700,
+                                minimumSize: const Size(200, 40),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            FilledButton.icon(
+                              onPressed: setNight,
+                              icon: Icon(
+                                Icons.nightlight,
+                                size: 18,
+                              ),
+                              label: Text("Nacht"),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: betriebsart == Betriebsart.NIGHT
+                                    ? Colors.blue.shade800
+                                    : Colors.blue.shade100,
+                                foregroundColor: betriebsart == Betriebsart.NIGHT ? Colors.white : Colors.grey.shade700,
+                                minimumSize: const Size(200, 40),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            FilledButton.icon(
+                              onPressed: setOff,
+                              icon: Icon(
+                                Icons.blur_off_outlined,
+                                size: 18,
+                              ),
+                              label: Text("Aus"),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: betriebsart == Betriebsart.FROST_PROTECTION
+                                    ? Colors.grey.shade800
+                                    : Colors.grey.shade300,
+                                foregroundColor: betriebsart == Betriebsart.FROST_PROTECTION ? Colors.white : Colors.grey.shade700,
+                                minimumSize: const Size(200, 40),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
 
+                          ],),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      FilledButton.icon(
-                        onPressed: toggleMode,
-                        icon: Icon(
-                          isComfort ? Icons.sunny : Icons.nightlight,
-                          size: 18,
-                        ),
-                        label: Text(
-                          isComfort ? "Nachtmodus" : "Komfort",
-                        ),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: isComfort
-                              ? Colors.black45
-                              : Colors.green.shade400,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(200, 40),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
+
+
                       const SizedBox(height: 8),
                       Slider(
                         value: targetTemperature,

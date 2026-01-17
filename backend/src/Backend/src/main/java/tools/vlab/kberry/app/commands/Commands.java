@@ -35,7 +35,8 @@ public enum Commands implements CommandTopic {
     HOLIDAY_START("scene", "holiday", "start"),
     HOLIDAY_END("scene", "holiday", "end"),
     START_MOVIE("scene", "start", "movie"),
-    SET_HEATER_SETTINGS("set", "settings", "heater"),;
+    SET_HEATER_SETTINGS("set", "settings", "heater"),
+    LOCK_JALOUSIE("set","jalousie", "lock");
 
     private final String[] path;
 

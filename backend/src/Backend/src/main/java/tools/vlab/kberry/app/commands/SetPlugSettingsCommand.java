@@ -57,7 +57,7 @@ public class SetPlugSettingsCommand extends Command {
             this.getLogics().register(logic);
         } else if (settings.isPresenceOff()) {
             // PRESENCE OFF
-            var logic = AutoPresenceOffLogic.at(settings.getHoldTimeMinute(), positionPath);
+            var logic = AutoPresenceOffLogic.at(settings.getHoldTimeMinute() * 60, positionPath);
             autoOffLogic.setSettingAsync(positionPath, logic.getId());
             this.getLogics().register(logic);
         }

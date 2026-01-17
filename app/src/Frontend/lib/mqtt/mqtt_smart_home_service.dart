@@ -70,10 +70,11 @@ class SmartHomeService {
     _client?.subscribeAll("DASHBOARD", (jsonString, topic) {
       final body = jsonDecode(jsonString);
       final positionPath = body["positionPath"] ?? "";
-      final values = (body["values"] as List<dynamic>? )
-          ?.map((e) => e.toString())
-          .toList()
-          ?? <String>[];
+      final values =
+          (body["values"] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          <String>[];
       final info = Information(
         positionPath: positionPath,
         values: values,
@@ -82,7 +83,7 @@ class SmartHomeService {
               e.name.toLowerCase() == (body["type"] as String?)?.toLowerCase(),
           orElse: () => InformationType.alle,
         ),
-        password: body["password"]
+        password: body["password"],
       );
       onMessage(info, topic);
     });
@@ -151,7 +152,7 @@ class SmartHomeService {
 
   void publishScene(String positionPath, String title) {
     _client?.publish(
-      'request/scene/$title',
+      'request/$positionPath',
       jsonEncode({"positionPath": positionPath, "title": title}),
     );
   }
@@ -217,6 +218,22 @@ class SmartHomeService {
         final body = jsonDecode(bodyString);
         final pos = (body["position"] as num?)?.toDouble() ?? 0.0;
         onMessage(pos);
+      },
+    );
+  }
+
+  void lockJalousie(
+    String positionPath,
+    bool lock,
+    void Function(bool pLock) onMessage,
+  ) {
+    _client?.request(
+      "set/jalousie/lock",
+      jsonEncode({"positionPath": positionPath, "status": lock}),
+      (bodyString, topic) {
+        final body = jsonDecode(bodyString);
+        final status = body["status"] as bool? ?? false;
+        onMessage(status);
       },
     );
   }
@@ -289,7 +306,10 @@ class SmartHomeService {
     );
   }
 
-  void getUsage(String positionPath, void Function(String, int, double) onMessage) {
+  void getUsage(
+    String positionPath,
+    void Function(String, int, double) onMessage,
+  ) {
     _client?.request(
       "get/usage/data",
       jsonEncode({"positionPath": positionPath}),
@@ -387,7 +407,7 @@ class SmartHomeService {
     void Function(List<Map<String, dynamic>> data) onMessage,
   ) {
     _client?.request(
-      "get/temperatur/statistics",
+      "get/temperature/statistics",
       jsonEncode({"positionPath": positionPath}),
       (bodyString, topic) {
         try {
@@ -404,10 +424,7 @@ class SmartHomeService {
 
             final DateTime time = DateTime.fromMillisecondsSinceEpoch(tInt);
             var temp = item["temp"] as double;
-            return {
-              'time': time,
-              'temp': temp,
-            };
+            return {'time': time, 'temp': temp};
           }).toList();
           onMessage(data);
         } catch (e) {
