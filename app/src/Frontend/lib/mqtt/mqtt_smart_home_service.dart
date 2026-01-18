@@ -22,8 +22,8 @@ class SmartHomeService {
 
   Future<bool> connect() async {
     if (_client == null) {
-      print("setzte MQTT Client!");
-      _client = Mqtt5Client(brokerIp: this.broker, port: this.port);
+      log.d("MQTT connected...");
+      _client = Mqtt5Client(brokerIp: broker, port: port);
       return await _client!.connect();
     }
     return true;

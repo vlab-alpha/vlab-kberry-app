@@ -1,144 +1,170 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:async';
+import 'package:logger/logger.dart';
 import 'dart:io';
 import 'package:mqtt5_client/mqtt5_client.dart';
 import 'package:mqtt5_client/mqtt5_server_client.dart';
-import 'dart:convert';
+
+final log = Logger();
 
 class Mqtt5Client {
   final String brokerIp;
   final int port;
-  late MqttServerClient client;
+  MqttServerClient? client;
+  bool _reconnecting = false;
+  StreamSubscription? _updatesSub;
 
   final Map<String, void Function(String payload, String topic)> _response = {};
-  final Map<String, void Function(String payload, String topic)> _subscription = {};
+  final Map<String, void Function(String payload, String topic)> _subscription =
+      {};
 
-  Mqtt5Client({
-    required this.brokerIp,
-    required this.port,
-  });
+  bool get isConnected =>
+      client?.connectionStatus?.state == MqttConnectionState.connected;
+
+  Mqtt5Client({required this.brokerIp, required this.port});
 
   Future<bool> connect() async {
-    client = MqttServerClient(this.brokerIp, 'flutter client');
-    client.port = this.port;
 
-    client.logging(on: true);
-    client.keepAlivePeriod = 60;
-    client.socketTimeout = 2000;
-    client.onDisconnected = onDisconnected;
-    client.onConnected = onConnected;
-    client.onSubscribed = onSubscribed;
-    client.pongCallback = pong;
+    if (client?.connectionStatus?.state == MqttConnectionState.connected) {
+      return true;
+    }
 
-    final property = MqttUserProperty();
-    property.pairName = 'Example name';
-    property.pairValue = 'Example value';
-    final connMess = MqttConnectMessage()
-        .withClientIdentifier('MQTT5DartClient')
-        .startClean() // Or startSession() for a persistent session
-        .withUserProperties([property]);
+    client = MqttServerClient(brokerIp, '');
+    client!.port = port;
 
+    client!.logging(on: true);
+    client!.keepAlivePeriod = 30;
+    client!.socketTimeout = 15000;
+    client!.onDisconnected = onDisconnected;
+    client!.onConnected = onConnected;
+    client!.onSubscribed = onSubscribed;
+    client!.pongCallback = pong;
+    client!.connectionMessage = MqttConnectMessage()
+        .withClientIdentifier('SmartHomeTablet')
+        .startClean();
     try {
-      await client.connect();
+      await client!.connect();
     } on MqttNoConnectionException catch (e) {
-      // Raised by the client when connection fails.
-      print('EXAMPLE::client exception - $e');
-      client.disconnect();
+      log.e("No MQTT Connection!", error: e);
+      client?.disconnect();
     } on SocketException catch (e) {
       // Raised by the socket layer
-      print('EXAMPLE::socket exception - $e');
-      client.disconnect();
+      log.e("Mqtt Socket Exception", error: e);
+      client?.disconnect();
+      return false;
     }
     var success = false;
-    if (client.connectionStatus!.state == MqttConnectionState.connected) {
+    if (client!.connectionStatus!.state == MqttConnectionState.connected) {
       success = true;
-      /// All returned properties in the connect acknowledge message are available.
-      /// Get our user properties from the connect acknowledge message.
-      if (client.connectionStatus!.connectAckMessage.userProperty!.isNotEmpty) {
-        print(
-          'EXAMPLE::Connected - user property name - ${client.connectionStatus!.connectAckMessage.userProperty![0].pairName}',
+      if (client!.connectionStatus!.connectAckMessage.userProperty!.isNotEmpty) {
+        log.i(
+          "Connected - user property name  - ${client!.connectionStatus!.connectAckMessage.userProperty![0].pairName}",
         );
-
       }
-    } else {
-      client.disconnect();
-      exit(-1);
     }
 
-    client.updates.listen((List<MqttReceivedMessage<MqttMessage>> c) {
+    _updatesSub?.cancel();
+    _updatesSub = client?.updates.listen((List<MqttReceivedMessage<MqttMessage>> c) {
       final recMess = c[0].payload as MqttPublishMessage;
       final pt = MqttUtilities.bytesToStringAsString(recMess.payload.message!);
       final topic = c[0].topic;
       final subscriptionKey = _subscription.keys.firstWhere(
-            (key) => topic?.startsWith(key)??false,
+        (key) => topic?.startsWith(key) ?? false,
         orElse: () => '',
       );
-      if(subscriptionKey.isNotEmpty) {
-        _subscription[subscriptionKey]?.call(pt, topic??"");
-      } else if(_response.containsKey(topic)) {
-        _response[topic]?.call(pt, topic??"");
+      if (subscriptionKey.isNotEmpty) {
+        _subscription[subscriptionKey]?.call(pt, topic ?? "");
+      } else if (_response.containsKey(topic)) {
+        _response[topic]?.call(pt, topic ?? "");
         _response.remove(topic);
+        if (topic != null) {
+          client!.unsubscribeStringTopic(topic);
+        }
       } else {
-        print("Unknown topic $topic");
+        log.e("Unknown topic $topic");
       }
-      // print(
-      //   'EXAMPLE::Change notification:: topic is <${c[0].topic}>, payload is <-- $pt -->',
-      // );
     });
-    print("SUCCESS: $success");
+    log.i("MQTT $success!");
     return success;
   }
 
   void subscribeAll(String topic, void Function(String, String) onMessage) {
     _subscription[topic] = onMessage;
-    client.subscribe("$topic/#", MqttQos.atMostOnce);
+    if (client?.connectionStatus?.state == MqttConnectionState.connected) {
+      client!.subscribe("$topic/#", MqttQos.atMostOnce);
+    }
   }
 
-  void request(String topic, String payload, void Function(String, String) onMessage) {
+  void request(
+    String topic,
+    String payload,
+    void Function(String, String) onMessage,
+  ) {
+    if (client?.connectionStatus?.state != MqttConnectionState.connected) {
+      log.w("Request skipped, MQTT not connected");
+      return;
+    }
     final requestTopic = "request/$topic";
     final responseTopic = "response/$topic";
     _response[responseTopic] = onMessage;
-    client.subscribe(responseTopic, MqttQos.atMostOnce);
+    client!.subscribe(responseTopic, MqttQos.atMostOnce);
     final builder = MqttPayloadBuilder();
     builder.addUTF8String(payload);
-    client.publishMessage(requestTopic, MqttQos.atMostOnce, builder.payload!);
+    client!.publishMessage(requestTopic, MqttQos.atMostOnce, builder.payload!);
   }
 
   void publish(String topic, String payload) {
+    if (client == null || client!.connectionStatus?.state != MqttConnectionState.connected) {
+      log.w("Publish skipped, MQTT not connected");
+      return;
+    }
     final builder = MqttPayloadBuilder();
     builder.addUTF8String(payload);
-    client.publishMessage(topic, MqttQos.atMostOnce, builder.payload!);
+    client!.publishMessage(topic, MqttQos.atMostOnce, builder.payload!);
   }
 
   void disconnect() {
-    client.disconnect();
-    print('⚠️ MQTT getrennt');
+    client?.disconnect();
+    log.e("Disconnected MQTT Connection!");
   }
 
   void onConnected() {
-    print(
-      'EXAMPLE::OnConnected client callback - Client connection was successful',
-    );
+    log.i("OnConnected client callback - Client connection was successful");
   }
 
   void onSubscribed(message) {
-    print(
-      'EXAMPLE::onSubscribed client callback - Client connection was successful $message',
+    log.i(
+      "onSubscribed client callback - Client connection was successful $message",
     );
   }
 
-  void onDisconnected() {
-    print('EXAMPLE::OnDisconnected client callback - Client disconnection');
-    if (client.connectionStatus!.disconnectionOrigin ==
-        MqttDisconnectionOrigin.solicited) {
+  void onDisconnected() async {
+    if (_reconnecting) return;
+    _reconnecting = true;
 
+    log.w("MQTT disconnected – trying reconnect...");
+    if (_response.isNotEmpty) {
+      log.w("Dropping ${_response.length} pending MQTT requests due to disconnect");
     }
-    exit(0);
+    _response.clear();
+    await Future.delayed(const Duration(seconds: 2));
+
+    try {
+      if(await connect()) {
+        _resubscribeAll();
+      }
+    } finally {
+      _reconnecting = false;
+    }
+  }
+
+  void _resubscribeAll() {
+    for (final topic in _subscription.keys) {
+      client?.subscribe("$topic/#", MqttQos.atMostOnce);
+    }
   }
 
   /// Pong callback
   void pong() {
-    print('EXAMPLE::Ping response client callback invoked');
+    //print('EXAMPLE::Ping response client callback invoked');
   }
 }

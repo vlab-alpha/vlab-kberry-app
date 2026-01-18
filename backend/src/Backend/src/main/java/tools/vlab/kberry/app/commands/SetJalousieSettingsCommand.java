@@ -104,7 +104,7 @@ public class SetJalousieSettingsCommand extends Command {
                         }
                     });
         } else {
-            this.unregister(positionPath, "_weekend_down");
+            this.unregister(positionPath, "weekend_down");
         }
 
         // Wakeup
@@ -112,7 +112,7 @@ public class SetJalousieSettingsCommand extends Command {
             this.register(
                     positionPath, "wakeup",
                     Daily.trigger(setting.getWakeUpTimeOpt().get().toLocalTime()),
-                    () -> jalousie.get().setPositionPercent(setting.getWakeUpPostion()));
+                    () -> jalousie.get().setPositionPercent(setting.getWakeUpPosition()));
         } else {
             this.unregister(positionPath, "wakeup");
         }

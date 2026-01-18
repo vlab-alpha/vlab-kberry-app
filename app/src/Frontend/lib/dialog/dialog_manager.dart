@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:SmartHome/card/jalousie_card.dart';
 import 'package:SmartHome/dialog/humidity_dialog.dart';
 import 'package:SmartHome/dialog/jalousie_dialog.dart';
 import 'package:SmartHome/dialog/plug_dialog.dart';
@@ -15,13 +14,6 @@ import 'dimmer_dialog.dart';
 import 'led_dialog.dart';
 import 'fan_dialog.dart';
 import 'pin_dialog.dart';
-import 'weather_dialog.dart';
-import 'package:async/async.dart';
-import 'temperature_dialog.dart';
-import 'jalousie_dialog.dart';
-import 'plug_dialog.dart';
-import 'humidity_dialog.dart';
-import 'usage_dialog.dart';
 
 Future<void> showInfoPopup(BuildContext context, Information info) async {
   if (info.password != null && info.password!.isNotEmpty) {

@@ -1,11 +1,9 @@
 package tools.vlab.kberry.app.logics;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.ext.mail.MailClient;
-import io.vertx.ext.mail.MailConfig;
-import io.vertx.ext.mail.MailMessage;
-import io.vertx.ext.mail.StartTLSOptions;
+import io.vertx.ext.mail.*;
 
 public class MailService extends AbstractVerticle {
 
@@ -27,10 +25,9 @@ public class MailService extends AbstractVerticle {
 
     @Override
     public void start(Promise<Void> startPromise) {
-        // Mail-Server konfigurieren
         MailConfig config = new MailConfig();
-        config.setHostname(this.host);  // SMTP-Server
-        config.setPort(this.port);                    // SMTP-Port (z.B. 587 für TLS)
+        config.setHostname(this.host);
+        config.setPort(this.port);
         config.setStarttls(StartTLSOptions.REQUIRED);
         config.setUsername(this.userName);
         config.setPassword(new String(this.password));
@@ -53,14 +50,13 @@ public class MailService extends AbstractVerticle {
      * @param subject Betreff
      * @param body    Inhalt der Mail
      */
-    public void sendMail(String subject, String body) {
+    public Future<MailResult> sendMail(String subject, String body) {
         MailMessage message = new MailMessage();
-        message.setFrom("Kberry SmartHome <your_user@example.com>");
+        message.setFrom("Kberry SmartHome Alarm");
         message.setTo(this.mailTo);
         message.setSubject(subject);
         message.setText(body);
-
-        mailClient.sendMail(message).onSuccess(to -> System.out.println("Mail erfolgreich gesendet an: " + to.getRecipients()))
-                .onFailure(failure -> System.err.println("Fehler beim Senden der Mail: " + failure.getMessage()));
+        return mailClient.sendMail(message);
     }
+
 }

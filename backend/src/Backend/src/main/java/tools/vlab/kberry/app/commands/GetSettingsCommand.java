@@ -37,7 +37,7 @@ public class GetSettingsCommand extends Command {
         }
         if (type == InformationType.jalousie) {
             return this.jalousieSettingsVerticle.getSettingAsync(positionPath)
-                    .map(currentSetting -> Optional.of(new JsonObject().put("settings", new JsonArray(currentSetting.toSettingsList()))));
+                    .map(currentSetting -> Optional.of(new JsonObject().put("settings", new JsonArray(currentSetting.toSettings()))));
         }
         if (type == InformationType.light) {
             return this.lightSettingsVerticle.getSettingAsync(positionPath)

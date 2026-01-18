@@ -6,11 +6,8 @@ import '../card/temperatur_card.dart';
 import '../card/weather_card.dart';
 import '../card/co2_card.dart';
 import '../card/fan_card.dart';
-import '../dialog/dialog_manager.dart';
 import '../card/energy_card.dart';
 import '../card/led_card.dart';
-import '../model/data.dart';
-import '../widgets/combobox.dart';
 import '../card/app_launcher_card.dart';
 import '../card/light_dimmer_card.dart';
 import '../card/scene_card.dart';
@@ -18,7 +15,6 @@ import '../card/reolink_card.dart';
 import 'package:SmartHome/card/light_card.dart';
 import 'package:SmartHome/card/stream_card.dart';
 import 'package:SmartHome/card/usage_card.dart';
-import 'package:SmartHome/model/Position.dart';
 
 Widget buildCard(
   Information item,
