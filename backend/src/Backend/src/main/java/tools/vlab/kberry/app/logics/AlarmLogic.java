@@ -12,6 +12,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class AlarmLogic extends Logic implements PresenceStatus {
 
+    public final static String LOGIC_NAME = "Alarm";
+
     private final static long BREAK_ONE_HOUR_MS = 1000 * 60 * 60;
     private final static Logger Log = LoggerFactory.getLogger(AlarmLogic.class);
     private final MailService mailService;
@@ -19,7 +21,7 @@ public class AlarmLogic extends Logic implements PresenceStatus {
     private final AtomicLong mailSendEveryOneHour = new AtomicLong();
 
     private AlarmLogic(PositionPath path, MailService mailService) {
-        super(path);
+        super(LOGIC_NAME, path);
         this.mailService = mailService;
     }
 

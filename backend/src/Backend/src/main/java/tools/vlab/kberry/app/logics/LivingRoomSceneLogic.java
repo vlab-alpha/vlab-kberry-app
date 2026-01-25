@@ -12,13 +12,15 @@ import tools.vlab.kberry.server.logic.Logic;
 
 public class LivingRoomSceneLogic extends Logic implements SceneStatus {
 
+    public final static String LOGIC_NAME = "LivingRoomScene";
+
     private final static int COMFORT = 1;
     private final static int NORMAL = 2;
 
     private final ExtendLightLogic logic;
 
     protected LivingRoomSceneLogic(PositionPath path, ExtendLightLogic logic) {
-        super(path);
+        super(LOGIC_NAME, path);
         this.logic = logic;
     }
 

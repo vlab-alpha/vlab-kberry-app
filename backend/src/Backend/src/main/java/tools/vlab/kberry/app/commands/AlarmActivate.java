@@ -7,26 +7,21 @@ import tools.vlab.kberry.app.logics.MailService;
 import tools.vlab.kberry.core.PositionPath;
 import tools.vlab.kberry.server.commands.CommandTopic;
 import tools.vlab.kberry.server.commands.Scene;
-import tools.vlab.kberry.server.settings.Settings;
 
 public class AlarmActivate extends Scene {
 
     private final MailService mailService;
-    private final Settings<String> alarmLogic;
 
-    public AlarmActivate(MailService mailService, Settings<String> alarmLogic) {
+    public AlarmActivate(MailService mailService) {
         this.mailService = mailService;
-        this.alarmLogic = alarmLogic;
     }
 
     @Override
     public void executeScene(JsonObject message) {
-        this.getKnxDevices().getAllPositionPaths().forEach(positionPath -> {
-            alarmLogic.getSetting(positionPath).ifPresent(logicId -> this.getLogics().unregister(logicId));
-            var logic = AlarmLogic.at(mailService, positionPath);
-            alarmLogic.setSettingAsync(positionPath, logic.getId());
-            this.getLogics().register(logic);
-        });
+        this.getKnxDevices().getAllPositionPaths()
+                .forEach(positionPath -> this.getLogicEngine().register(
+                        AlarmLogic.at(mailService, positionPath))
+                );
     }
 
     @Override

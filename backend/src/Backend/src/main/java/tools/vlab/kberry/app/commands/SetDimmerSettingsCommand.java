@@ -17,7 +17,6 @@ import java.util.Optional;
 
 public class SetDimmerSettingsCommand extends Command {
 
-    private final Settings<String> dimmLogic = new LogicIdStore();
     private final DimmerSettingsVerticle settings;
     private final static Map<String, TargetLux> LUX_MAP = Map.of(
             "Wohnzimmer", TargetLux.LIVING_ROOM,
@@ -33,7 +32,7 @@ public class SetDimmerSettingsCommand extends Command {
     public Future<Optional<JsonObject>> execute(JsonObject message) {
         Haus positionPath = Haus.positionPath(message.getString("positionPath"));
         var dimmer = Dimmer.fromSettings(message.getJsonArray("settings").stream().map(o -> ((JsonObject) o)).toList());
-        setDimmLogic(positionPath, dimmer);
+        setDimmerLogic(positionPath, dimmer);
         return this.settings
                 .setSettingAsync(positionPath, dimmer)
                 .map(none -> Optional.empty());
@@ -50,17 +49,17 @@ public class SetDimmerSettingsCommand extends Command {
                 .getKNXDevices(tools.vlab.kberry.core.devices.actor.Dimmer.class)
                 .forEach(device -> settings.getSetting(device.getPositionPath())
                         .filter(Dimmer::isDimmerByLux)
-                        .ifPresent(setting -> setDimmLogic(device.getPositionPath(), setting)
+                        .ifPresent(setting -> setDimmerLogic(device.getPositionPath(), setting)
         ));
     }
 
-    private void setDimmLogic(PositionPath positionPath, Dimmer settings) {
-        dimmLogic.getSetting(positionPath).ifPresent(logicId -> this.getLogics().unregister(logicId));
+    private void setDimmerLogic(PositionPath positionPath, Dimmer settings) {
         if (settings.isDimmerByLux()) {
             var target = LUX_MAP.get(positionPath.getRoom());
             var logic = DimmerByLuxLogic.at(target, positionPath);
-            dimmLogic.setSettingAsync(positionPath, logic.getId());
-            this.getLogics().register(logic);
+            this.getLogicEngine().register(logic);
+        } else {
+            this.getLogicEngine().unregister(positionPath, DimmerByLuxLogic.LOGIC_NAME);
         }
     }
 }

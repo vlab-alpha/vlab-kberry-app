@@ -8,17 +8,14 @@ import tools.vlab.kberry.app.settings.PlugSettingsVerticle;
 import tools.vlab.kberry.core.PositionPath;
 import tools.vlab.kberry.server.commands.Command;
 import tools.vlab.kberry.server.commands.CommandTopic;
-import tools.vlab.kberry.server.logic.AutoPresenceOffLogic;
+import tools.vlab.kberry.server.logic.AutoPresenceLightOffLogic;
 import tools.vlab.kberry.server.logic.AutoUsageOffLogic;
-import tools.vlab.kberry.server.settings.Settings;
 
 import java.util.Optional;
 
 public class SetPlugSettingsCommand extends Command {
 
     private final PlugSettingsVerticle settings;
-    private final Settings<String> autoOffLogic = new LogicIdStore();
-    private final Settings<String> usageOffLogic = new LogicIdStore();
 
     public SetPlugSettingsCommand(PlugSettingsVerticle settings) {
         this.settings = settings;
@@ -48,18 +45,17 @@ public class SetPlugSettingsCommand extends Command {
     }
 
     private void setPlugOffLogic(PositionPath positionPath, tools.vlab.kberry.app.settings.Plug settings) {
-        autoOffLogic.getSetting(positionPath).ifPresent(logicId -> this.getLogics().unregister(logicId));
-        usageOffLogic.getSetting(positionPath).ifPresent(logicId -> this.getLogics().unregister(logicId));
         if (settings.isUsageTime()) {
             // USAGE OFF
-            var logic = AutoUsageOffLogic.at(settings.getMaxUsageTimeMinutes(), positionPath);
-            usageOffLogic.getSetting(positionPath);
-            this.getLogics().register(logic);
+            this.getLogicEngine().unregister(positionPath, AutoPresenceLightOffLogic.LOGIC_NAME);
+            this.getLogicEngine().register(AutoUsageOffLogic.at(settings.getMaxUsageTimeMinutes(), positionPath));
         } else if (settings.isPresenceOff()) {
             // PRESENCE OFF
-            var logic = AutoPresenceOffLogic.at(settings.getHoldTimeMinute() * 60, positionPath);
-            autoOffLogic.setSettingAsync(positionPath, logic.getId());
-            this.getLogics().register(logic);
+            this.getLogicEngine().unregister(positionPath, AutoUsageOffLogic.LOGIC_NAME);
+            this.getLogicEngine().register(AutoPresenceLightOffLogic.at(settings.getHoldTimeMinute() * 60, positionPath));
+        } else {
+            this.getLogicEngine().unregister(positionPath, AutoPresenceLightOffLogic.LOGIC_NAME);
+            this.getLogicEngine().unregister(positionPath, AutoUsageOffLogic.LOGIC_NAME);
         }
     }
 

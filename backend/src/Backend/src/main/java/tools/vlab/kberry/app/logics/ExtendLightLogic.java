@@ -1,18 +1,18 @@
 package tools.vlab.kberry.app.logics;
 
-import tools.vlab.kberry.app.commands.LogicIdStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tools.vlab.kberry.app.settings.LightSettingsVerticle;
 import tools.vlab.kberry.core.PositionPath;
 import tools.vlab.kberry.server.commands.Command;
 import tools.vlab.kberry.server.logic.AutoLightOnLogic;
-import tools.vlab.kberry.server.logic.AutoPresenceOffLogic;
+import tools.vlab.kberry.server.logic.AutoPresenceLightOffLogic;
 import tools.vlab.kberry.server.scheduler.trigger.Daily;
-import tools.vlab.kberry.server.settings.Settings;
 
 public class ExtendLightLogic {
 
-    private final Settings<String> autoOffLogic = new LogicIdStore();
-    private final Settings<String> autoOnLogic = new LogicIdStore();
+    private final static Logger Log = LoggerFactory.getLogger(ExtendLightLogic.class);
+
     private final Command command;
     private final LightSettingsVerticle settingsVerticle;
 
@@ -22,7 +22,7 @@ public class ExtendLightLogic {
     }
 
     public void disable(PositionPath positionPath) {
-        autoOnLogic.getSetting(positionPath).ifPresent(logicId -> command.getLogics().unregister(logicId));
+        command.getLogicEngine().unregister(positionPath, AutoLightOnLogic.LOGIC_NAME);
     }
 
     public void enable(PositionPath positionPath) {
@@ -30,42 +30,42 @@ public class ExtendLightLogic {
     }
 
     public void setLightLogic(PositionPath positionPath, tools.vlab.kberry.app.settings.Light settings) {
-        autoOffLogic.getSetting(positionPath).ifPresent(logicId -> command.getLogics().unregister(logicId));
 
         // ON
         if (settings.isPresenceOnDuringTime() && settings.isPresenceOn()) {
+            Log.info("Add Auto Light On for room {} in the specific time!", positionPath.getRoom());
             command.register(positionPath, "presence_on_light_start", Daily.trigger(settings.getStartAutoOnTime()),
                     () -> registerLightLogic(positionPath, settings));
             command.register(positionPath, "presence_on_light_end", Daily.trigger(settings.getEndStartAutoOnTime()),
-                    () -> autoOnLogic.getSetting(positionPath).ifPresent(logicId -> command.getLogics().unregister(logicId)));
+                    () -> command.getLogicEngine().unregister(positionPath, AutoLightOnLogic.LOGIC_NAME));
         } else if (settings.isPresenceOn()) {
+            Log.info("Add Auto Light On for room {}", positionPath.getRoom());
             command.unregister(positionPath, "presence_on_light_start");
             command.unregister(positionPath, "presence_on_light_end");
-            autoOnLogic.getSetting(positionPath).ifPresent(logicId -> command.getLogics().unregister(logicId));
             registerLightLogic(positionPath, settings);
         } else {
+            Log.info("Remove Auto Light On for room {} [Logic: {}]", positionPath.getRoom(), command.getLogicEngine().getLogicNames(positionPath));
             command.unregister(positionPath, "presence_on_light_start");
             command.unregister(positionPath, "presence_on_light_end");
-            autoOnLogic.getSetting(positionPath).ifPresent(logicId -> command.getLogics().unregister(logicId));
+            command.getLogicEngine().unregister(positionPath, AutoLightOnLogic.LOGIC_NAME);
         }
 
         // OFF
         if (settings.isPresenceOff()) {
-            var logic = AutoPresenceOffLogic.at(settings.getHoldTimeMinute() * 60, positionPath);
-            autoOffLogic.setSettingAsync(positionPath, logic.getId());
-            command.getLogics().register(logic);
+            var logic = AutoPresenceLightOffLogic.at(settings.getHoldTimeMinute() * 60, positionPath);
+            command.getLogicEngine().register(logic);
+        } else {
+            command.getLogicEngine().unregister(positionPath, AutoPresenceLightOffLogic.LOGIC_NAME);
         }
     }
 
     public void registerLightLogic(PositionPath positionPath, tools.vlab.kberry.app.settings.Light settings) {
         if (settings.isOnlyDark() && settings.isPresenceOn()) {
             var logic = AutoLightOnLogic.at(settings.getMinLux(), positionPath);
-            autoOnLogic.setSettingAsync(positionPath, logic.getId());
-            command.getLogics().register(logic);
+            command.getLogicEngine().register(logic);
         } else if (settings.isPresenceOn()) {
             var logic = AutoLightOnLogic.at(positionPath);
-            autoOnLogic.setSettingAsync(positionPath, logic.getId());
-            command.getLogics().register(logic);
+            command.getLogicEngine().register(logic);
         }
     }
 
