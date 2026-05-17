@@ -16,14 +16,15 @@ public enum Haus implements PositionPath {
     DiningRoomTop("Haus", "EG", "Esszimmer", "Decke"),
     DiningRoomWall("Haus", "EG", "Esszimmer", "Wand"),
     DiningRoomFloor("Haus", "EG", "Esszimmer", "Boden"),
-    HallwayTop("Haus", "EG", "Gang", "Decke"),
-    HallwayWall("Haus", "EG", "Gang", "Wand"),
-    HallwayFloor("Haus", "EG", "Gang", "Boden"),
+    HallwayTop("Haus", "EG", "Eingang", "Decke"),
+    HallwayWall("Haus", "EG", "Eingang", "Wand"),
+    HallwayFloor("Haus", "EG", "Eingang", "Boden"),
     GuestWC_Top("Haus", "EG", "Gäste WC", "Decke"),
     GuestWC_Wall("Haus", "EG", "Gäste WC", "Wand"),
     ChangingRoomTop("Haus", "EG", "Umkleideraum", "Decke"),
     ChangingRoomWall("Haus", "EG", "Umkleideraum", "Wand"),
     ChangingRoomFloor("Haus", "EG", "Umkleideraum", "Boden"),
+    StairsLight("Haus","EG", "Stairs", "Boden"),
 
     // Upper Floor
     SleepingRoomTop("Haus", "OG", "Schlafzimmer", "Decke"),
@@ -31,6 +32,7 @@ public enum Haus implements PositionPath {
     SleepingRoomFloor("Haus", "OG", "Schlafzimmer", "Floor"),
     KidsRoomYellowTop("Haus", "OG", "Gelb Kinderzimmer", "Decke"),
     KidsRoomYellowWall("Haus", "OG", "Gelb Kinderzimmer", "Wand"),
+    KidsRoomYellowWindow("Haus", "OG", "Gelb Kinderzimmer", "Window"),
     KidsRoomYellowFloor("Haus", "OG", "Gelb Kinderzimmer", "Boden"),
     KidsRoomYellowPC("Haus", "OG", "Gelb Kinderzimmer", "PC"),
     KidsRoomBlueTop("Haus", "OG", "Blau Kinderzimmer", "Decke"),
@@ -38,13 +40,26 @@ public enum Haus implements PositionPath {
     KidsRoomBlueFloor("Haus", "OG", "Blau Kinderzimmer", "Boden"),
     OfficeTop("Haus", "OG", "Büro", "Decke"),
     OfficeWall("Haus", "OG", "Büro", "Wand"),
+    OfficePrinter("Haus", "OG", "Büro", "Drucker"),
     OfficeFloor("Haus", "OG", "Büro", "Boden"),
     BathTop("Haus", "OG", "Bad", "Decke"),
     BathWall("Haus", "OG", "Bad", "Wand"),
     BathFloor("Haus", "OG", "Bad", "Boden"),
     UpperHallwayTop("Haus", "OG", "Gang", "Decke"),
     UpperHallwayWall("Haus", "OG", "Gang", "Wand"),
-    UpperHallwayFloor("Haus", "OG", "Gang", "Boden");
+    UpperHallwayFloor("Haus", "OG", "Gang", "Boden"),
+    Information("Haus", "EG", "Info", "Information"),
+
+    // Underground
+    FloorUndergroundStair("Haus","UG","Gang","Stair"),
+    FloorUndergroundTop("Haus","UG","Gang","Decke"),
+    FloorUndergroundWall("Haus","UG","Gang","Wand"),
+    MusicRoomWall("Haus","UG","Musikraum","Wand"),
+    MusicRoomTop("Haus","UG","Musikraum","Decke"),
+    MusicRoomLed("Haus","UG","Musikraum","Led"),
+    WashingRoomTop("Haus", "UG", "Waschraum", "Decke"),
+    WashingRoomWall("Haus", "UG", "Waschraum", "Wand"),
+
     ;
     private final String position;
     private final String floor;

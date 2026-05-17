@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../service_provider.dart';
 import '../model/data.dart';
 import '../dialog/setting_view.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../service_provider.dart';
+import 'log_view.dart';
 
 class FanDialog extends ConsumerStatefulWidget {
   final Information information;
@@ -17,12 +18,21 @@ class _FanDialogState extends ConsumerState<FanDialog>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool isFanOn = false;
+  int _pauseMinutes = 30;
+  int speed = 0;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    isFanOn = widget.information.firstValue == "ON";
+    _tabController = TabController(length: 3, vsync: this);
+    isFanOn = widget.information.firstValue == "true";
+    speed = int.tryParse(widget.information.secondValue ?? "0") ?? 0;
+    _getFanStatus((bool status, int currentSpeed) {
+      setState(() {
+        isFanOn = status;
+        speed = currentSpeed;
+      });
+    });
   }
 
   @override
@@ -31,34 +41,54 @@ class _FanDialogState extends ConsumerState<FanDialog>
     super.dispose();
   }
 
-  Future<void> _saveSettings(bool fanOn) async {
+  Future<void> _getFanStatus(
+    void Function(bool status, int speed) onMessage,
+  ) async {
     final service = ref.read(smartHomeServiceProvider);
     final connected = await service.connect();
     if (!connected) return;
-    service.setFanStatus(widget.information.positionPath, fanOn, (status) {
-      if (status != fanOn) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Einstellungen übernommen')),
-        );
-        setState(() {
-          isFanOn = status;
-        });
-      } else {
+    service.getFanStatus(widget.information.positionPath, onMessage);
+  }
+
+  Future<void> _setFanStatus(bool fanOn) async {
+    final service = ref.read(smartHomeServiceProvider);
+    final connected = await service.connect();
+    if (!connected) return;
+    service.setFanStatus(widget.information.positionPath, fanOn, (
+      status,
+      currentSpeed,
+      isChanged,
+    ) {
+      if (!isChanged) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'Konnte nicht übernommen werden!',
-              style: TextStyle(color: Colors.white),
-            ),
-            backgroundColor: Colors.redAccent,
+            content: Text('Fehler beim Ändern des Zustands'),
+            backgroundColor: Colors.red,
           ),
         );
+        return;
       }
+      setState(() {
+        isFanOn = status;
+        speed = currentSpeed;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Einstellungen übernommen')));
     });
   }
 
-  void toggleFan() {
-    _saveSettings(!isFanOn);
+  Future<void> _pauseFan(Duration duration) async {
+    final service = ref.read(smartHomeServiceProvider);
+    final connected = await service.connect();
+    if (!connected) return;
+    service.pauseFan(widget.information.positionPath, duration, () {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lüfter pausiert für ${duration.inSeconds} Sekunden'),
+        ),
+      );
+    });
   }
 
   @override
@@ -68,7 +98,7 @@ class _FanDialogState extends ConsumerState<FanDialog>
       insetPadding: const EdgeInsets.all(24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
-        width: 400,
+        width: 600,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           gradient: LinearGradient(
@@ -80,7 +110,7 @@ class _FanDialogState extends ConsumerState<FanDialog>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // --- Header mit Titel ---
+            // --- Header ---
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
               decoration: BoxDecoration(
@@ -91,7 +121,7 @@ class _FanDialogState extends ConsumerState<FanDialog>
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.lightbulb_outline, color: Colors.white),
+                  const Icon(Icons.toys, color: Colors.white),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -120,6 +150,7 @@ class _FanDialogState extends ConsumerState<FanDialog>
               tabs: const [
                 Tab(icon: Icon(Icons.power_settings_new), text: "Steuerung"),
                 Tab(icon: Icon(Icons.settings), text: "Einstellungen"),
+                Tab(icon: Icon(Icons.receipt_long), text: "Logs"),
               ],
             ),
 
@@ -143,22 +174,13 @@ class _FanDialogState extends ConsumerState<FanDialog>
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Icon(
-                          isFanOn
-                              ? Icons.flip_camera_android
-                              : Icons.mode_fan_off_outlined,
-                          size: 80,
-                          color: isFanOn
-                              ? Colors.blue.shade700
-                              : Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 8),
+
                         FilledButton.icon(
-                          onPressed: toggleFan,
+                          onPressed: () => _setFanStatus(!isFanOn),
                           icon: Icon(
                             isFanOn
-                                ? Icons.flip_camera_android
-                                : Icons.mode_fan_off_outlined,
+                                ? Icons.mode_fan_off
+                                : Icons.flip_camera_android,
                             size: 18,
                           ),
                           label: Text(isFanOn ? "Ausschalten" : "Einschalten"),
@@ -173,6 +195,58 @@ class _FanDialogState extends ConsumerState<FanDialog>
                             ),
                           ),
                         ),
+
+                        const SizedBox(height: 8),
+
+                        // --- Eingabe der Pausezeit ---
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 80,
+                              child: TextField(
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  labelText: "Minuten",
+                                  border: OutlineInputBorder(),
+                                  isDense: true,
+                                ),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _pauseMinutes = int.tryParse(value) ?? 0;
+                                  });
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            FilledButton.icon(
+                              onPressed: _pauseMinutes > 0
+                                  ? () => _pauseFan(
+                                      Duration(minutes: _pauseMinutes),
+                                    )
+                                  : null,
+                              icon: const Icon(Icons.pause, size: 18),
+                              label: const Text("Pause"),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.orangeAccent.shade200,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(120, 40),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 8),
+                        Text(
+                          "Geschwindigkeit: $speed %",
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -182,6 +256,9 @@ class _FanDialogState extends ConsumerState<FanDialog>
                     positionPath: widget.information.positionPath,
                     type: widget.information.type,
                   ),
+
+                  // --- TAB 3: Logs ---
+                  LogView(positionPath: widget.information.positionPath),
                 ],
               ),
             ),

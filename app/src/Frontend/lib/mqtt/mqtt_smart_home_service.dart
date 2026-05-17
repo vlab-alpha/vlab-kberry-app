@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../core/app_logger.dart';
 import '../model/data.dart';
 import 'package:logger/logger.dart';
 import '../config.dart';
@@ -90,6 +91,7 @@ class SmartHomeService {
   }
 
   void getPositionPaths(void Function(List<String> positionPaths) onMessage) {
+    AppLogger().log("Get position paths");
     _client?.request("get/position/paths", "", (bodyString, topic) {
       final body = jsonDecode(bodyString);
       final paths = (body["paths"] as List).cast<String>();
@@ -100,7 +102,7 @@ class SmartHomeService {
   void setFanStatus(
     String positionPath,
     bool fanStatus,
-    void Function(bool status) onMessage,
+    void Function(bool status, int speed, bool changed) onMessage,
   ) {
     _client?.request(
       "set/fan/status",
@@ -108,7 +110,37 @@ class SmartHomeService {
       (bodyString, topic) {
         final body = jsonDecode(bodyString);
         final status = body["status"] as bool? ?? false;
-        onMessage(status);
+        final speed = body["speed"] as int? ?? 0;
+        final changed = body["changed"] as bool? ?? false;
+        onMessage(status, speed, changed);
+      },
+    );
+  }
+
+  void getFanStatus(
+      String positionPath,
+      void Function(bool status, int speed) onMessage,
+      ) {
+    _client?.request(
+      "get/fan/status",
+      jsonEncode({"positionPath": positionPath}),
+          (bodyString, topic) {
+        final body = jsonDecode(bodyString);
+        final status = body["status"] as bool? ?? false;
+        final speed = body["speed"] as int? ?? 0;
+        onMessage(status, speed);
+      },
+    );
+  }
+
+  void pauseFan(String positionPath,
+      Duration duration,
+      void Function() onMessage) {
+    _client?.request(
+      "set/fan/status",
+      jsonEncode({"positionPath": positionPath, "breakTime": duration.inMinutes}),
+          (bodyString, topic) {
+        onMessage();
       },
     );
   }
@@ -415,20 +447,104 @@ class SmartHomeService {
           final List<dynamic> jsonArray = body['statistics'] ?? [];
 
           final List<Map<String, dynamic>> data = jsonArray.map((item) {
-            final dynamic tDyn = item["time"];
+            // Parse timestamp (als int)
+            final dynamic tDyn =
+                item["timestamp"]; // ← War "time", jetzt "timestamp"
             final int tInt = tDyn is int
                 ? tDyn
                 : tDyn is String
                 ? int.tryParse(tDyn) ?? 0
                 : 0;
-
             final DateTime time = DateTime.fromMillisecondsSinceEpoch(tInt);
-            var temp = item["temp"] as double;
+
+            // Parse value (als String -> double)
+            final dynamic valueDyn =
+                item["value"]; // ← War "temp", jetzt "value"
+            final double temp;
+            if (valueDyn is double) {
+              temp = valueDyn;
+            } else if (valueDyn is int) {
+              temp = valueDyn.toDouble();
+            } else if (valueDyn is String) {
+              temp = double.tryParse(valueDyn) ?? 0.0;
+            } else {
+              temp = 0.0;
+            }
+
             return {'time': time, 'temp': temp};
           }).toList();
+
           onMessage(data);
         } catch (e) {
-          print("Error parsing statistics: $e");
+          AppLogger().log("Error parsing statistics: $e");
+          onMessage([]);
+        }
+      },
+    );
+  }
+
+  void getLogs(
+    String positionPath,
+    void Function(List<Map<String, dynamic>> logs) onMessage,
+  ) {
+    _client?.request("get/log", jsonEncode({"positionPath": positionPath}), (
+      bodyString,
+      topic,
+    ) {
+      try {
+        var body = jsonDecode(bodyString);
+        final List<dynamic> data = body["logs"] ?? [];
+        onMessage(List<Map<String, dynamic>>.from(data));
+      } catch (e) {
+        AppLogger().log("Error parsing logs: $e");
+        onMessage([]);
+      }
+    });
+  }
+
+  void getHumidityStatistics(
+    String positionPath,
+    void Function(List<Map<String, dynamic>> data) onMessage,
+  ) {
+    _client?.request(
+      "get/humidity/statistics",
+      jsonEncode({"positionPath": positionPath}),
+      (bodyString, topic) {
+        try {
+          var body = jsonDecode(bodyString);
+          final List<dynamic> jsonArray = body['statistics'] ?? [];
+
+          final List<Map<String, dynamic>> data = jsonArray.map((item) {
+            // Parse timestamp (als int)
+            final dynamic tDyn =
+                item["timestamp"]; // ← War "time", jetzt "timestamp"
+            final int tInt = tDyn is int
+                ? tDyn
+                : tDyn is String
+                ? int.tryParse(tDyn) ?? 0
+                : 0;
+            final DateTime time = DateTime.fromMillisecondsSinceEpoch(tInt);
+
+            // Parse value (als String -> double)
+            final dynamic valueDyn =
+                item["value"]; // ← War "temp", jetzt "value"
+            final int humidity;
+            if (valueDyn is double) {
+              humidity = valueDyn.toInt();
+            } else if (valueDyn is int) {
+              humidity = valueDyn.toInt();
+            } else if (valueDyn is String) {
+              humidity = int.tryParse(valueDyn) ?? 0;
+            } else {
+              humidity = 0;
+            }
+
+            return {'time': time, 'humidity': humidity};
+          }).toList();
+
+          onMessage(data);
+        } catch (e) {
+          AppLogger().log("Error parsing statistics: $e");
           onMessage([]);
         }
       },

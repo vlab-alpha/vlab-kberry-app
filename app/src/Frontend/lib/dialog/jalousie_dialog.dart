@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../service_provider.dart';
 import 'dart:async';
 
+import 'log_view.dart';
+
 class JalousieDialog extends ConsumerStatefulWidget {
   final Information information;
 
@@ -31,7 +33,7 @@ class _JalousieDialogState extends ConsumerState<JalousieDialog>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
 
     // initial aus Information laden
     shutterPosition = double.tryParse(widget.information.firstValue) ?? 0.0;
@@ -240,6 +242,7 @@ class _JalousieDialogState extends ConsumerState<JalousieDialog>
               tabs: const [
                 Tab(icon: Icon(Icons.tune), text: "Steuerung"),
                 Tab(icon: Icon(Icons.settings), text: "Einstellungen"),
+                Tab(icon: Icon(Icons.receipt_long), text: "Logs"),
               ],
             ),
 
@@ -356,6 +359,10 @@ class _JalousieDialogState extends ConsumerState<JalousieDialog>
                   SettingsView(
                     positionPath: widget.information.positionPath,
                     type: widget.information.type,
+                  ),
+
+                  LogView(
+                    positionPath: widget.information.positionPath,
                   ),
                 ],
               ),

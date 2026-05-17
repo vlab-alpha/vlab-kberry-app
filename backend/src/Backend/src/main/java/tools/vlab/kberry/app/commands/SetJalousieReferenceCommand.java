@@ -4,7 +4,7 @@ import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import tools.vlab.kberry.app.Haus;
 import tools.vlab.kberry.core.PositionPath;
-import tools.vlab.kberry.core.devices.actor.Jalousie;
+import tools.vlab.kberry.core.knx.devices.actor.Jalousie;
 import tools.vlab.kberry.server.commands.Command;
 import tools.vlab.kberry.server.commands.CommandTopic;
 

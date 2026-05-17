@@ -6,7 +6,7 @@ import tools.vlab.kberry.app.Haus;
 import tools.vlab.kberry.app.settings.FloorHeater;
 import tools.vlab.kberry.app.settings.FloorHeaterSettingsVerticle;
 import tools.vlab.kberry.core.PositionPath;
-import tools.vlab.kberry.core.devices.HeaterMode;
+import tools.vlab.kberry.core.knx.devices.HeaterMode;
 import tools.vlab.kberry.server.commands.Command;
 import tools.vlab.kberry.server.commands.CommandTopic;
 import tools.vlab.kberry.server.scheduler.trigger.Daily;
@@ -38,14 +38,14 @@ public class SetFloorHeaterSettingsCommand extends Command {
 
     @Override
     public void init() {
-        this.getKnxDevices().getKNXDevices(tools.vlab.kberry.core.devices.actor.FloorHeater.class).forEach(jalousie -> {
+        this.getKnxDevices().getKNXDevices(tools.vlab.kberry.core.knx.devices.actor.FloorHeater.class).forEach(jalousie -> {
             var setting = this.settings.getSetting(jalousie.getPositionPath());
             setting.ifPresent(value -> initSettings(jalousie.getPositionPath(), value));
         });
     }
 
     private void initSettings(PositionPath positionPath, FloorHeater setting) {
-        var device = this.getKnxDevices().getKNXDeviceByRoom(tools.vlab.kberry.core.devices.actor.FloorHeater.class, positionPath);
+        var device = this.getKnxDevices().getKNXDeviceByRoom(tools.vlab.kberry.core.knx.devices.actor.FloorHeater.class, positionPath);
         if (setting.isNightSetback() && device.isPresent()) {
             this.register(
                     positionPath, "night_setback_start",

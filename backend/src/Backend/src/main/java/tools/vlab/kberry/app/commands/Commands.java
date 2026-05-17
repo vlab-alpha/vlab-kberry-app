@@ -24,6 +24,7 @@ public enum Commands implements CommandTopic {
     SET_DIMMER_SETTINGS("set","settings","dimmer"),
     SET_DIMMER_STATUS("set","dimmer","status"),
     GET_DIMMER_STATUS("get", "dimmer", "status"),
+    GET_CALENDAR_INFO("get", "calendar", "info"),
     GET_USAGE_DATA("get", "usage", "data"),
     GET_SETTINGS_ALL("get", "settings", "all"),
     GET_POSITION_PATHS("get", "position", "paths"),
@@ -36,7 +37,14 @@ public enum Commands implements CommandTopic {
     HOLIDAY_END("scene", "holiday", "end"),
     START_MOVIE("scene", "start", "movie"),
     SET_HEATER_SETTINGS("set", "settings", "heater"),
-    LOCK_JALOUSIE("set","jalousie", "lock");
+    LOCK_JALOUSIE("set","jalousie", "lock"),
+    GET_HUMIDITY_STATISTICS("get", "humidity", "statistics"),
+    GET_PRESENCE_STATISTICS("get", "presence", "statistics"),
+    GET_LOG("get", "log"),
+    SET_FAN("set","fan","status"),
+    SET_FAN_SETTINGS("set","settings","fan"),
+    SET_FAN_BREAK("set","fan", "break"),
+    GET_FAN_STATUS("get", "fan", "status");
 
     private final String[] path;
 

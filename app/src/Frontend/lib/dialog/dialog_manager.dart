@@ -58,7 +58,7 @@ Future<void> showInfoPopup(BuildContext context, Information info) async {
       dialog = EnergyDialog(information: info);
       break;
     case InformationType.led:
-      dialog = LedControlDialog(information: info);
+      dialog = LedDialog(information: info);
       break;
     default:
       dialog = InfoDialog(information: info);

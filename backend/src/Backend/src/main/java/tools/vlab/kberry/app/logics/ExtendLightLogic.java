@@ -1,17 +1,18 @@
 package tools.vlab.kberry.app.logics;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import tools.vlab.kberry.app.settings.LightSettingsVerticle;
 import tools.vlab.kberry.core.PositionPath;
+import tools.vlab.kberry.core.knx.devices.actor.Light;
 import tools.vlab.kberry.server.commands.Command;
+import tools.vlab.kberry.server.log.Logger;
 import tools.vlab.kberry.server.logic.AutoLightOnLogic;
-import tools.vlab.kberry.server.logic.AutoPresenceLightOffLogic;
+import tools.vlab.kberry.server.logic.AutoPresenceKnxOffLogic;
 import tools.vlab.kberry.server.scheduler.trigger.Daily;
+
+import java.time.LocalTime;
 
 public class ExtendLightLogic {
 
-    private final static Logger Log = LoggerFactory.getLogger(ExtendLightLogic.class);
 
     private final Command command;
     private final LightSettingsVerticle settingsVerticle;
@@ -33,18 +34,25 @@ public class ExtendLightLogic {
 
         // ON
         if (settings.isPresenceOnDuringTime() && settings.isPresenceOn()) {
-            Log.info("Add Auto Light On for room {} in the specific time!", positionPath.getRoom());
+            Logger.info(positionPath,"Add Auto Light On in the specific time!");
             command.register(positionPath, "presence_on_light_start", Daily.trigger(settings.getStartAutoOnTime()),
                     () -> registerLightLogic(positionPath, settings));
             command.register(positionPath, "presence_on_light_end", Daily.trigger(settings.getEndStartAutoOnTime()),
                     () -> command.getLogicEngine().unregister(positionPath, AutoLightOnLogic.LOGIC_NAME));
+            // Init after start
+            if (LocalTime.now().isAfter(settings.getStartAutoOnTime()) && LocalTime.now().isBefore(settings.getEndStartAutoOnTime())) {
+                Logger.info(positionPath, "Init Auto Light On for room!");
+                registerLightLogic(positionPath, settings);
+            } else {
+                command.getLogicEngine().unregister(positionPath, AutoLightOnLogic.LOGIC_NAME);
+            }
         } else if (settings.isPresenceOn()) {
-            Log.info("Add Auto Light On for room {}", positionPath.getRoom());
+            Logger.info(positionPath,"Add Auto Light On");
             command.unregister(positionPath, "presence_on_light_start");
             command.unregister(positionPath, "presence_on_light_end");
             registerLightLogic(positionPath, settings);
         } else {
-            Log.info("Remove Auto Light On for room {} [Logic: {}]", positionPath.getRoom(), command.getLogicEngine().getLogicNames(positionPath));
+            Logger.info(positionPath,"Remove Auto Light On [Logic: {}]", command.getLogicEngine().getLogicNames(positionPath));
             command.unregister(positionPath, "presence_on_light_start");
             command.unregister(positionPath, "presence_on_light_end");
             command.getLogicEngine().unregister(positionPath, AutoLightOnLogic.LOGIC_NAME);
@@ -52,10 +60,10 @@ public class ExtendLightLogic {
 
         // OFF
         if (settings.isPresenceOff()) {
-            var logic = AutoPresenceLightOffLogic.at(settings.getHoldTimeMinute() * 60, positionPath);
+            var logic = AutoPresenceKnxOffLogic.at(Light.class, settings.getHoldTimeMinute() * 60, positionPath);
             command.getLogicEngine().register(logic);
         } else {
-            command.getLogicEngine().unregister(positionPath, AutoPresenceLightOffLogic.LOGIC_NAME);
+            command.getLogicEngine().unregister(positionPath, AutoPresenceKnxOffLogic.LOGIC_NAME);
         }
     }
 

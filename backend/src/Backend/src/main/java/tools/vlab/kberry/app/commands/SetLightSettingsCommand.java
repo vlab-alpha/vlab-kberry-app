@@ -7,7 +7,7 @@ import tools.vlab.kberry.app.Haus;
 import tools.vlab.kberry.app.logics.ExtendLightLogic;
 import tools.vlab.kberry.app.settings.LightSettingsVerticle;
 import tools.vlab.kberry.core.PositionPath;
-import tools.vlab.kberry.core.devices.actor.Light;
+import tools.vlab.kberry.core.knx.devices.actor.Light;
 import tools.vlab.kberry.server.commands.Command;
 import tools.vlab.kberry.server.commands.CommandTopic;
 

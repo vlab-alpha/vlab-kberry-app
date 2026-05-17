@@ -16,6 +16,10 @@ public class Value {
     public Value() {
     }
 
+    public static Value empty() {
+        return new Value(ValueType.String, "", "", "");
+    }
+
     public ValueType getType() {
         return type;
     }

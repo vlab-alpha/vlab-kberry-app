@@ -2,12 +2,12 @@ package tools.vlab.kberry.app.logics;
 
 import tools.vlab.kberry.app.Haus;
 import tools.vlab.kberry.core.PositionPath;
-import tools.vlab.kberry.core.devices.RGB;
-import tools.vlab.kberry.core.devices.SceneStatus;
-import tools.vlab.kberry.core.devices.actor.Dimmer;
-import tools.vlab.kberry.core.devices.actor.Led;
-import tools.vlab.kberry.core.devices.actor.Light;
-import tools.vlab.kberry.core.devices.actor.OnOffDevice;
+import tools.vlab.kberry.core.RGB;
+import tools.vlab.kberry.core.knx.devices.SceneStatus;
+import tools.vlab.kberry.core.knx.devices.actor.Dimmer;
+import tools.vlab.kberry.core.knx.devices.actor.Led;
+import tools.vlab.kberry.core.knx.devices.actor.Light;
+import tools.vlab.kberry.core.knx.devices.actor.OnOffDevice;
 import tools.vlab.kberry.server.logic.Logic;
 
 public class LivingRoomSceneLogic extends Logic implements SceneStatus {

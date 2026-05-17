@@ -14,6 +14,8 @@ enum InformationType {
   energy,
   launcher,
   led,
+  logs,
+  calendar,
   alle,
 }
 
@@ -168,18 +170,21 @@ enum SettingType {
   Checkbox,
   Text,
   Minutes,
+  Separator
 }
 
 class Setting {
   SettingType type;
   String title;
   Value value;
+  bool disable;
   String? icon;
 
   Setting({
     required this.type,
     required this.title,
     required this.value,
+    required this.disable,
     this.icon,
   });
 
@@ -187,6 +192,7 @@ class Setting {
     final title = json["title"] ?? "";
     final icon = json["icon"];
     final typeString = json["type"];
+    final disable = json["disable"] as bool;
 
     // SettingType anhand des ValueType bestimmen (optional)
     final type = SettingType.values.firstWhere(
@@ -200,7 +206,7 @@ class Setting {
         ? Value.fromJson(valueJson)
         : Value(type: ValueType.String, value: valueJson.toString());
 
-    return Setting(type: type, title: title, value: value, icon: icon);
+    return Setting(type: type, title: title, value: value, disable:disable, icon: icon);
   }
 
   Map<String, dynamic> toJson() => {

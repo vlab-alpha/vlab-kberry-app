@@ -39,6 +39,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
         originalSettings = fetchedSettings.map((s) => Setting(
           type: s.type,
           title: s.title,
+          disable: s.disable,
           icon: s.icon,
           value: Value(
             type: s.value.type,
@@ -99,6 +100,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                         .map((s) => Setting(
                       type: s.type,
                       title: s.title,
+                      disable: s.disable,
                       icon: s.icon,
                       value: Value(
                         type: s.value.type,
@@ -141,6 +143,9 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
         break;
       case SettingType.Date:
         control = _buildDatePicker(setting);
+        break;
+      case SettingType.Separator:
+        control = _builderSeparator();
         break;
       case SettingType.DateSpan:
         control = _buildDateSpanPicker(setting);
@@ -211,7 +216,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
       children: [
         Checkbox(
           value: checked,
-          onChanged: (v) {
+          onChanged: setting.disable ? null : (v) {
             setState(
               () => setting.value = Value(
                 type: ValueType.Boolean,
@@ -234,7 +239,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
         Text(setting.value.value),
         const SizedBox(width: 10),
         ElevatedButton(
-          onPressed: () async {
+          onPressed: setting.disable ? null : () async {
             final picked = await showTimePicker(
               context: context,
               initialTime: initial,
@@ -269,7 +274,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
             Text("Von: ${setting.value.from ?? ''}"),
             const SizedBox(width: 10),
             ElevatedButton(
-              onPressed: () async {
+              onPressed: setting.disable ? null : () async {
                 final picked = await showTimePicker(
                   context: context,
                   initialTime: from,
@@ -318,6 +323,15 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
     );
   }
 
+  Widget _builderSeparator() {
+    return const Divider(
+      thickness: 2,
+      color: Colors.blueGrey,
+      indent: 0,
+      endIndent: 0,
+    );
+  }
+
   Widget _buildDatePicker(Setting setting) {
     DateTime initial = DateTime.tryParse(setting.value.value) ?? DateTime.now();
     return Row(
@@ -325,7 +339,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
         Text(setting.value.value),
         const SizedBox(width: 10),
         ElevatedButton(
-          onPressed: () async {
+          onPressed: setting.disable ? null : () async {
             final picked = await showDatePicker(
               context: context,
               initialDate: initial,
@@ -359,7 +373,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
             Text("Von: ${setting.value.from ?? ''}"),
             const SizedBox(width: 10),
             ElevatedButton(
-              onPressed: () async {
+              onPressed: setting.disable ? null : () async {
                 final picked = await showDatePicker(
                   context: context,
                   initialDate: from,

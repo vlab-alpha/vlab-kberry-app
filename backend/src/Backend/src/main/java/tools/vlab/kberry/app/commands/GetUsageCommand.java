@@ -3,9 +3,10 @@ package tools.vlab.kberry.app.commands;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import tools.vlab.kberry.app.Haus;
-import tools.vlab.kberry.core.devices.sensor.PresenceSensor;
+import tools.vlab.kberry.core.knx.devices.sensor.PresenceSensor;
 import tools.vlab.kberry.server.commands.Command;
 import tools.vlab.kberry.server.commands.CommandTopic;
+import tools.vlab.kberry.server.statistics.values.BooleanValue;
 
 import java.util.Optional;
 
@@ -14,7 +15,7 @@ public class GetUsageCommand extends Command {
     @Override
     public Future<Optional<JsonObject>> execute(JsonObject message) {
         var positionPath = Haus.positionPath(message.getString("positionPath"));
-        return getStatistics().getPresent().getCurrentAverageUsage(positionPath).compose(averageUsage -> {
+        return getStatistics().getPresent().getTodayAverage(BooleanValue.class, positionPath).compose(averageUsage -> {
             var current = getKnxDevices().getKNXDevice(PresenceSensor.class, positionPath);
             var isUsed = current
                     .map(PresenceSensor::isPresent)
@@ -23,10 +24,10 @@ public class GetUsageCommand extends Command {
             long lastUsedMinutes = current
                     .map(PresenceSensor::getLastPresentSecond)
                     .map(seconds -> seconds / 60)
-                    .orElse((long)0);
+                    .orElse((long) 0);
             return Future.succeededFuture(Optional.of(new JsonObject()
-                    .put("usedMinutes", (int)lastUsedMinutes)
-                    .put("usage", averageUsage)
+                    .put("usedMinutes", (int) lastUsedMinutes)
+                    .put("usage", averageUsage.value())
                     .put("used", isUsed)
             ));
         });

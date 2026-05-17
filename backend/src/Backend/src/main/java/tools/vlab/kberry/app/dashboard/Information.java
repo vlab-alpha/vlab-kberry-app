@@ -4,23 +4,26 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;
+import tools.vlab.kberry.app.Haus;
 import tools.vlab.kberry.core.PositionPath;
-import tools.vlab.kberry.core.devices.HeaterMode;
-import tools.vlab.kberry.core.devices.RGB;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import tools.vlab.kberry.core.knx.devices.HeaterMode;
+import tools.vlab.kberry.core.RGB;
 
 import java.util.List;
 
 @Getter
 public class Information {
 
-    private final static Logger Log = LoggerFactory.getLogger(Information.class.getName());
     PositionPath positionPath;
     InformationType type;
     String password;
     String[] values;
     protected String extendPath = null;
+
+
+    public static Information fan(PositionPath positionPath, Boolean isOn, Integer speed, String password) {
+        return new Information(positionPath, InformationType.fan, password, isOn.toString(), speed.toString());
+    }
 
     public static Information led(PositionPath positionPath, RGB rgbw, String password) {
         return new Information(positionPath, InformationType.led, password, rgbw.toHex());
@@ -78,11 +81,23 @@ public class Information {
         return new Information(positionPath, InformationType.voc, password, currentLux.toString());
     }
 
+    public static Information weather(String title, Double temperature) {
+        var info = new Information(Haus.Information, InformationType.weather, null, temperature.toString());
+        info.extendPath = title;
+        return info;
+    }
+
     public Information(PositionPath positionPath, InformationType type, String password, String... values) {
         this.positionPath = positionPath;
         this.type = type;
         this.password = password;
         this.values = values;
+    }
+
+    public static Information calendar(String title, String text) {
+        var info = new Information(Haus.Information, InformationType.calendar, null, text);
+        info.extendPath = title;
+        return info;
     }
 
     public String getTopic() {
@@ -95,7 +110,6 @@ public class Information {
 
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
-        Log.debug("extendPath != null: {} und type {}", (extendPath != null), type.name());
         if (extendPath != null) {
             json.put("positionPath", String.join("/",
                     this.positionPath.getLocation(),

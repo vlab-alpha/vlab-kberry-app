@@ -1,10 +1,10 @@
 package tools.vlab.kberry.app.logics;
 
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.vlab.kberry.core.PositionPath;
-import tools.vlab.kberry.core.devices.sensor.PresenceSensor;
-import tools.vlab.kberry.core.devices.sensor.PresenceStatus;
+import tools.vlab.kberry.core.knx.devices.sensor.PresenceSensor;
+import tools.vlab.kberry.core.knx.devices.sensor.PresenceStatus;
+import tools.vlab.kberry.server.log.Logger;
 import tools.vlab.kberry.server.logic.Logic;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -15,7 +15,6 @@ public class AlarmLogic extends Logic implements PresenceStatus {
     public final static String LOGIC_NAME = "Alarm";
 
     private final static long BREAK_ONE_HOUR_MS = 1000 * 60 * 60;
-    private final static Logger Log = LoggerFactory.getLogger(AlarmLogic.class);
     private final MailService mailService;
     private final AtomicBoolean mailSendActive = new AtomicBoolean(true);
     private final AtomicLong mailSendEveryOneHour = new AtomicLong();
@@ -44,11 +43,11 @@ public class AlarmLogic extends Logic implements PresenceStatus {
         if (mailSendActive.get() && mailSendEveryOneHour.get() < (System.currentTimeMillis() - BREAK_ONE_HOUR_MS)) {
             mailService.sendMail("Person detected", String.format("Person detected in room %s", sensor.getPositionPath().getRoom()))
                     .onFailure(failure -> {
-                        Log.error("Mail couldn't send!", failure);
+                        Logger.error(getPositionPath(), failure, "Mail couldn't send!");
                         mailSendActive.set(false);
                     })
                     .onSuccess(mailResult -> {
-                        Log.info("Mail send successfully!");
+                        Logger.info(getPositionPath(), "Mail send successfully!");
                         mailSendEveryOneHour.set(System.currentTimeMillis());
                     });
         }

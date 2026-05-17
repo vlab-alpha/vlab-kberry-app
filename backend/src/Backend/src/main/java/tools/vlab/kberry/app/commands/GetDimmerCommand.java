@@ -4,7 +4,7 @@ import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import tools.vlab.kberry.app.Haus;
 import tools.vlab.kberry.app.settings.DimmerSettingsVerticle;
-import tools.vlab.kberry.core.devices.actor.Dimmer;
+import tools.vlab.kberry.core.knx.devices.actor.Dimmer;
 import tools.vlab.kberry.server.commands.Command;
 import tools.vlab.kberry.server.commands.CommandTopic;
 

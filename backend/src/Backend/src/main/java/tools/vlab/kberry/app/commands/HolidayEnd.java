@@ -3,8 +3,8 @@ package tools.vlab.kberry.app.commands;
 import io.vertx.core.json.JsonObject;
 import tools.vlab.kberry.app.Haus;
 import tools.vlab.kberry.core.PositionPath;
-import tools.vlab.kberry.core.devices.HeaterMode;
-import tools.vlab.kberry.core.devices.actor.FloorHeater;
+import tools.vlab.kberry.core.knx.devices.HeaterMode;
+import tools.vlab.kberry.core.knx.devices.actor.FloorHeater;
 import tools.vlab.kberry.server.commands.CommandTopic;
 import tools.vlab.kberry.server.commands.Scene;
 

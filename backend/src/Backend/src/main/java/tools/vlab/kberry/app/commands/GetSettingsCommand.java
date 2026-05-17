@@ -18,13 +18,15 @@ public class GetSettingsCommand extends Command {
     private final LightSettingsVerticle lightSettingsVerticle;
     private final PlugSettingsVerticle plugSettingsVerticle;
     private final FloorHeaterSettingsVerticle heaterSettingsVerticle;
+    private final FanSettingsVerticle fanSettingsVerticle;
 
-    public GetSettingsCommand(DimmerSettingsVerticle dimmerSettingsVerticle, JalousieSettingsVerticle jalousieSettingsVerticle, LightSettingsVerticle lightSettingsVerticle, PlugSettingsVerticle plugSettingsVerticle, FloorHeaterSettingsVerticle heaterSettingsVerticle) {
+    public GetSettingsCommand(DimmerSettingsVerticle dimmerSettingsVerticle, JalousieSettingsVerticle jalousieSettingsVerticle, LightSettingsVerticle lightSettingsVerticle, PlugSettingsVerticle plugSettingsVerticle, FloorHeaterSettingsVerticle heaterSettingsVerticle, FanSettingsVerticle fanSettingsVerticle) {
         this.dimmerSettingsVerticle = dimmerSettingsVerticle;
         this.jalousieSettingsVerticle = jalousieSettingsVerticle;
         this.lightSettingsVerticle = lightSettingsVerticle;
         this.plugSettingsVerticle = plugSettingsVerticle;
         this.heaterSettingsVerticle = heaterSettingsVerticle;
+        this.fanSettingsVerticle = fanSettingsVerticle;
     }
 
     @Override
@@ -49,6 +51,10 @@ public class GetSettingsCommand extends Command {
         }
         if (type == InformationType.floorHeater) {
             return this.heaterSettingsVerticle.getSettingAsync(positionPath)
+                    .map(currentSetting -> Optional.of(new JsonObject().put("settings", new JsonArray(currentSetting.toSettings()))));
+        }
+        if (type == InformationType.fan) {
+            return this.fanSettingsVerticle.getSettingAsync(positionPath)
                     .map(currentSetting -> Optional.of(new JsonObject().put("settings", new JsonArray(currentSetting.toSettings()))));
         }
         return Future.succeededFuture(Optional.of(new JsonObject().put("settings", new JsonArray())));

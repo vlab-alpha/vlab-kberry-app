@@ -9,7 +9,8 @@ public class AppSettings {
     private String password;
     private String mqttHost;
     private int mqttPort;
-    private String calendarUrl;
+    private String smarthomeCalendarUrl;
+    private String garbageCalendarUrl;
     private String mailUserName;
     private String mailPassword;
     private String mailHost;

@@ -4,9 +4,9 @@ import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import tools.vlab.kberry.app.Haus;
 import tools.vlab.kberry.core.PositionPath;
-import tools.vlab.kberry.core.devices.HeaterMode;
-import tools.vlab.kberry.core.devices.actor.FloorHeater;
-import tools.vlab.kberry.core.devices.sensor.TemperatureSensor;
+import tools.vlab.kberry.core.knx.devices.HeaterMode;
+import tools.vlab.kberry.core.knx.devices.actor.FloorHeater;
+import tools.vlab.kberry.core.knx.devices.sensor.TemperatureSensor;
 import tools.vlab.kberry.server.commands.Command;
 import tools.vlab.kberry.server.commands.CommandTopic;
 

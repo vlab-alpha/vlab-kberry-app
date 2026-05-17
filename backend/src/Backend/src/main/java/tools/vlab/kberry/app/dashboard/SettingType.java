@@ -10,4 +10,5 @@ public enum SettingType {
     Checkbox,
     RGBW,
     Minutes,
+    Seperator
 }

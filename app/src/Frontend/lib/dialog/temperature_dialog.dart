@@ -7,6 +7,8 @@ import 'floor_heater_position_bar.dart';
 import '../charts/TemperatureChart.dart';
 import 'dart:async';
 
+import 'log_view.dart';
+
 class TemperatureDialog extends ConsumerStatefulWidget {
   final Information information;
 
@@ -78,7 +80,7 @@ class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
 
     currentTemperature = double.tryParse(widget.information.firstValue) ?? 21.0;
     targetTemperature = 10.0;
@@ -275,6 +277,7 @@ class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
               Tab(icon: Icon(Icons.power_settings_new), text: "Steuerung"),
               Tab(icon: Icon(Icons.settings), text: "Einstellungen"),
               Tab(icon: Icon(Icons.auto_graph_rounded), text: "Statistics"),
+              Tab(icon: Icon(Icons.receipt_long), text: "Logs"),
             ],
           ),
 
@@ -464,6 +467,10 @@ class _TemperatureDialogState extends ConsumerState<TemperatureDialog>
                       );
                     }
                   },
+                ),
+
+                LogView(
+                  positionPath: widget.information.positionPath,
                 ),
               ],
             ),

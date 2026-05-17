@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:mqtt5_client/mqtt5_client.dart';
 import 'package:mqtt5_client/mqtt5_server_client.dart';
 
+import '../core/app_logger.dart';
+
 final log = Logger();
 
 class Mqtt5Client {
@@ -44,11 +46,11 @@ class Mqtt5Client {
     try {
       await client!.connect();
     } on MqttNoConnectionException catch (e) {
-      log.e("No MQTT Connection!", error: e);
+      AppLogger().log("No MQTT Connection!", error: e);
       client?.disconnect();
     } on SocketException catch (e) {
       // Raised by the socket layer
-      log.e("Mqtt Socket Exception", error: e);
+      AppLogger().log("Mqtt Socket Exception", error: e);
       client?.disconnect();
       return false;
     }
@@ -56,7 +58,7 @@ class Mqtt5Client {
     if (client!.connectionStatus!.state == MqttConnectionState.connected) {
       success = true;
       if (client!.connectionStatus!.connectAckMessage.userProperty!.isNotEmpty) {
-        log.i(
+        AppLogger().log(
           "Connected - user property name  - ${client!.connectionStatus!.connectAckMessage.userProperty![0].pairName}",
         );
       }
@@ -80,16 +82,17 @@ class Mqtt5Client {
           client!.unsubscribeStringTopic(topic);
         }
       } else {
-        log.e("Unknown topic $topic");
+        AppLogger().log("Unknown topic $topic");
       }
     });
-    log.i("MQTT $success!");
+    AppLogger().log("MQTT $success!");
     return success;
   }
 
   void subscribeAll(String topic, void Function(String, String) onMessage) {
     _subscription[topic] = onMessage;
     if (client?.connectionStatus?.state == MqttConnectionState.connected) {
+      AppLogger().log("Subscribing to $topic");
       client!.subscribe("$topic/#", MqttQos.atMostOnce);
     }
   }
@@ -100,7 +103,7 @@ class Mqtt5Client {
     void Function(String, String) onMessage,
   ) {
     if (client?.connectionStatus?.state != MqttConnectionState.connected) {
-      log.w("Request skipped, MQTT not connected");
+      AppLogger().log("Request skipped, MQTT not connected");
       return;
     }
     final requestTopic = "request/$topic";
@@ -109,12 +112,14 @@ class Mqtt5Client {
     client!.subscribe(responseTopic, MqttQos.atMostOnce);
     final builder = MqttPayloadBuilder();
     builder.addUTF8String(payload);
+    final isConnected = client?.connectionStatus?.state ?? false;
+    AppLogger().log("Publish request [TOPIC:$requestTopic; Connected:$isConnected; ResponseSize:${_response.length}]");
     client!.publishMessage(requestTopic, MqttQos.atMostOnce, builder.payload!);
   }
 
   void publish(String topic, String payload) {
     if (client == null || client!.connectionStatus?.state != MqttConnectionState.connected) {
-      log.w("Publish skipped, MQTT not connected");
+      AppLogger().log("Publish skipped, MQTT not connected");
       return;
     }
     final builder = MqttPayloadBuilder();
@@ -124,15 +129,15 @@ class Mqtt5Client {
 
   void disconnect() {
     client?.disconnect();
-    log.e("Disconnected MQTT Connection!");
+    AppLogger().log("Disconnected MQTT Connection!");
   }
 
   void onConnected() {
-    log.i("OnConnected client callback - Client connection was successful");
+    AppLogger().log("OnConnected client callback - Client connection was successful");
   }
 
   void onSubscribed(message) {
-    log.i(
+    AppLogger().log(
       "onSubscribed client callback - Client connection was successful $message",
     );
   }
@@ -141,9 +146,9 @@ class Mqtt5Client {
     if (_reconnecting) return;
     _reconnecting = true;
 
-    log.w("MQTT disconnected – trying reconnect...");
+    AppLogger().log("MQTT disconnected – trying reconnect...");
     if (_response.isNotEmpty) {
-      log.w("Dropping ${_response.length} pending MQTT requests due to disconnect");
+      AppLogger().log("Dropping ${_response.length} pending MQTT requests due to disconnect");
     }
     _response.clear();
     await Future.delayed(const Duration(seconds: 2));

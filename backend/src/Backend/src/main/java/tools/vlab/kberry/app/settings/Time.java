@@ -22,4 +22,9 @@ public class Time {
     public LocalTime toLocalTime() {
         return LocalTime.of(hour, minute);
     }
+
+    public Time addMinutes(int minutesToAdd) {
+        LocalTime calculated = toLocalTime().plusMinutes(minutesToAdd);
+        return new Time(calculated.getHour(), calculated.getMinute());
+    }
 }

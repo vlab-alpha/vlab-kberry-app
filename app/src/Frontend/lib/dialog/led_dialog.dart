@@ -1,51 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../model/data.dart';
-import 'package:async/async.dart';
 import '../service_provider.dart';
 
-class LedControlDialog extends ConsumerStatefulWidget {
+class LedDialog extends ConsumerStatefulWidget {
   final Information information;
 
-  const LedControlDialog({super.key, required this.information});
+  const LedDialog({super.key, required this.information});
 
   @override
-  ConsumerState<LedControlDialog> createState() => _LedControlDialogState();
+  ConsumerState<LedDialog> createState() => _LedDialogState();
 }
 
-class _LedControlDialogState extends ConsumerState<LedControlDialog> {
-  late int _r;
-  late int _g;
-  late int _b;
-  late int _w;
+class _LedDialogState extends ConsumerState<LedDialog>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  late int _r, _g, _b, _w;
+  bool isLedOn = false;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+
     final hex = widget.information.firstValue;
     final rgba = _hexToRgbw(hex);
     _r = rgba[0];
     _g = rgba[1];
     _b = rgba[2];
     _w = rgba[3];
+
+    isLedOn = _r + _g + _b + _w > 0;
   }
 
-  Future<void> setRGBW(String hex) async {
+  Future<void> _setRGBW(String hex) async {
     final service = ref.read(smartHomeServiceProvider);
     final connected = await service.connect();
     if (!connected) return;
-    service.setRGBW(widget.information.positionPath, hex, (hex){
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('LED eingestellt')));
+    service.setRGBW(widget.information.positionPath, hex, (hex) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('LED eingestellt')),
+      );
     });
   }
 
-  // HEX in RGBW umwandeln
   List<int> _hexToRgbw(String hex) {
     try {
       hex = hex.replaceAll('#', '');
-      if (hex.length == 6) hex += '00'; // Wenn W fehlt, 0 setzen
+      if (hex.length == 6) hex += '00'; // W auf 0 setzen
       final intVal = int.parse(hex, radix: 16);
       final r = (intVal >> 24) & 0xFF;
       final g = (intVal >> 16) & 0xFF;
@@ -57,7 +59,6 @@ class _LedControlDialogState extends ConsumerState<LedControlDialog> {
     }
   }
 
-  // RGBW zurück in HEX
   String _rgbwToHex(int r, int g, int b, int w) {
     return '#'
         '${r.toRadixString(16).padLeft(2, '0')}'
@@ -68,47 +69,210 @@ class _LedControlDialogState extends ConsumerState<LedControlDialog> {
   }
 
   Color get _ledColor =>
-      Color.fromARGB(255, (_r + _w).clamp(0, 255), (_g + _w).clamp(0, 255), (_b + _w).clamp(0, 255));
+      isLedOn
+          ? Color.fromARGB(255, (_r + _w).clamp(0, 255), (_g + _w).clamp(0, 255), (_b + _w).clamp(0, 255))
+          : Colors.black;
+
+  void _toggleLed(bool on) {
+    setState(() {
+      isLedOn = on;
+      if (!on) {
+        _r = _g = _b = _w = 0;
+      }
+    });
+    _setRGBW(_rgbwToHex(_r, _g, _b, _w));
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: const Color(0xFF2E2E2E),
-      title: const Text('LED Control', style: TextStyle(color: Colors.white)),
-      content: SingleChildScrollView(
+    return Dialog(
+      elevation: 12,
+      insetPadding: const EdgeInsets.all(24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Container(
+        width: 600,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            colors: [Colors.grey.shade50, Colors.grey.shade200],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
+            // --- Header ---
             Container(
-              width: 80,
-              height: 80,
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
               decoration: BoxDecoration(
-                color: _ledColor,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(color: _ledColor.withOpacity(0.7), blurRadius: 12, spreadRadius: 2),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                color: Colors.blueGrey.shade800,
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.lightbulb_outline, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      widget.information.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white70),
+                    onPressed: () => Navigator.pop(context),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            _slider('R', Colors.red, _r, (val) => setState(() => _r = val)),
-            _slider('G', Colors.green, _g, (val) => setState(() => _g = val)),
-            _slider('B', Colors.blue, _b, (val) => setState(() => _b = val)),
-            _slider('W', Colors.white, _w, (val) => setState(() => _w = val)),
+
+            // --- Tabs ---
+            TabBar(
+              controller: _tabController,
+              indicatorColor: Colors.blueGrey.shade700,
+              labelColor: Colors.blueGrey.shade900,
+              unselectedLabelColor: Colors.grey,
+              tabs: const [
+                Tab(icon: Icon(Icons.power_settings_new), text: "Steuerung"),
+                Tab(icon: Icon(Icons.settings), text: "RGBW"),
+              ],
+            ),
+
+            // --- TabBarView ---
+            SizedBox(
+              height: 320,
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  // --- Steuerung Tab ---
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Raum: ${widget.information.room}",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Icon(
+                          Icons.lightbulb,
+                          size: 80,
+                          color: _ledColor,
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            FilledButton.icon(
+                              onPressed: () => _toggleLed(true),
+                              icon: const Icon(Icons.power, size: 18),
+                              label: const Text("An"),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.green.shade300,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(120, 40),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            FilledButton.icon(
+                              onPressed: () => _toggleLed(false),
+                              icon: const Icon(Icons.power_off, size: 18),
+                              label: const Text("Aus"),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.redAccent.shade100,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(120, 40),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // --- RGBW Tab ---
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: _ledColor,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: _ledColor.withOpacity(0.7),
+                                blurRadius: 12,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _slider('R', Colors.red, _r, (val) {
+                          setState(() {
+                            _r = val;
+                            isLedOn = true;
+                          });
+                        }),
+                        _slider('G', Colors.green, _g, (val) {
+                          setState(() {
+                            _g = val;
+                            isLedOn = true;
+                          });
+                        }),
+                        _slider('B', Colors.blue, _b, (val) {
+                          setState(() {
+                            _b = val;
+                            isLedOn = true;
+                          });
+                        }),
+                        _slider('W', Colors.white, _w, (val) {
+                          setState(() {
+                            _w = val;
+                            isLedOn = true;
+                          });
+                        }),
+                        const SizedBox(height: 12),
+                        FilledButton(
+                          onPressed: () {
+                            _setRGBW(_rgbwToHex(_r, _g, _b, _w));
+                          },
+                          child: const Text("Set", style: TextStyle(color: Colors.white)),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.blueGrey.shade700,
+                            minimumSize: const Size(200, 40),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel', style: TextStyle(color: Colors.white)),
-        ),
-        TextButton(
-          onPressed: () {
-            setRGBW(_rgbwToHex(_r, _g, _b, _w));
-          },
-          child: const Text('Set', style: TextStyle(color: Colors.greenAccent)),
-        ),
-      ],
     );
   }
 

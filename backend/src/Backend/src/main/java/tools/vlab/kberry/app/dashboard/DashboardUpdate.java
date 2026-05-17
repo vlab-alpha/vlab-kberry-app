@@ -4,23 +4,39 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.mqtt.MqttClient;
 import lombok.Getter;
-import tools.vlab.kberry.app.Haus;
+import lombok.extern.slf4j.Slf4j;
 import tools.vlab.kberry.core.PositionPath;
-import tools.vlab.kberry.core.devices.KNXDevice;
-import tools.vlab.kberry.core.devices.KNXDevices;
-import tools.vlab.kberry.core.devices.actor.*;
-import tools.vlab.kberry.core.devices.sensor.*;
+import tools.vlab.kberry.core.knx.devices.KNXDevice;
+import tools.vlab.kberry.core.knx.devices.KNXDevices;
+import tools.vlab.kberry.core.knx.devices.actor.*;
+import tools.vlab.kberry.core.knx.devices.sensor.*;
+import tools.vlab.kberry.core.mqtt.custom.devices.CustomMqttDevice;
+import tools.vlab.kberry.core.mqtt.custom.devices.CustomMqttDevices;
+import tools.vlab.kberry.core.mqtt.custom.devices.actor.Fan;
+import tools.vlab.kberry.core.mqtt.shelly.devices.ShellyDevice;
+import tools.vlab.kberry.core.mqtt.shelly.devices.ShellyDevices;
 import tools.vlab.kberry.server.commands.Scene;
+import tools.vlab.kberry.server.log.Logger;
+import tools.vlab.kberry.server.serviceProvider.ServiceProviders;
 import tools.vlab.kberry.server.statistics.Statistics;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
+@Slf4j
 public class DashboardUpdate extends AbstractVerticle {
 
+    Map<String, String> lastPayloads = new ConcurrentHashMap<>();
     private final KNXDevices knxDevices;
+    private final CustomMqttDevices mqttDevices;
+    private final ShellyDevices shellyDevices;
     @Getter
     private final Statistics statistics;
     private final String mqttAddress;
@@ -28,17 +44,23 @@ public class DashboardUpdate extends AbstractVerticle {
     private final String password;
     private final Set<PositionPath> passwordRequired;
     private final List<Scene> scenes;
+    private final ServiceProviders serviceProviders;
     private long timerId;
+    private long calendarTimerId;
+    private long weatherTimerId;
     private MqttClient client;
 
-    public DashboardUpdate(KNXDevices knxDevices, Statistics statistics, String mqttAddress, int port, String password, Set<PositionPath> passwordRequired, List<Scene> scenes) {
+    public DashboardUpdate(KNXDevices knxDevices, CustomMqttDevices mqttDevices, ShellyDevices shellyDevices, Statistics statistics, String mqttAddress, int port, String password, Set<PositionPath> passwordRequired, List<Scene> scenes, ServiceProviders serviceProviders) {
         this.knxDevices = knxDevices;
+        this.mqttDevices = mqttDevices;
+        this.shellyDevices = shellyDevices;
         this.statistics = statistics;
         this.mqttAddress = mqttAddress;
         this.port = port;
         this.password = password;
         this.passwordRequired = passwordRequired;
         this.scenes = scenes;
+        this.serviceProviders = serviceProviders;
     }
 
     @Override
@@ -50,29 +72,93 @@ public class DashboardUpdate extends AbstractVerticle {
                     return Future.succeededFuture();
                 })
                 .compose(none -> {
-                    timerId = vertx.setPeriodic(5000, l -> {
-                        this.publishHumidity();
-                        this.publishElectricity();
-                        this.publishJalousie();
-                        this.publishLight();
-                        this.publishUsage();
-                        this.publishVOC();
-                        this.publishPlugs();
-                        this.publishLED();
-                        this.publishHeater();
-                        this.publishDimmer();
-                    });
+                    scheduleNextBatch();
+                    calendarTimerId = vertx.setPeriodic(60000, l -> publishCalendar());
+                    weatherTimerId = vertx.setPeriodic(60000, l -> publishWeather());
                     return Future.succeededFuture();
                 }).onComplete(res -> startPromise.complete())
                 .onFailure(startPromise::fail);
+        client.closeHandler(v -> {
+            Logger.info("MQTT connection closed, reconnecting...");
+            reconnect();
+        });
+    }
+
+    private void scheduleNextBatch() {
+        timerId = vertx.setTimer(5000, id -> {
+            publishBatch();
+            scheduleNextBatch();
+        });
+    }
+
+    void publishBatch() {
+        List<Runnable> tasks = List.of(
+                this::publishHumidity,
+                this::publishFan,
+                this::publishElectricity,
+                this::publishJalousie,
+                this::publishLight,
+                this::publishUsage,
+                this::publishVOC,
+                this::publishPlugs,
+                this::publishLED,
+                this::publishHeater,
+                this::publishDimmer
+        );
+        int delay = 0;
+        for (Runnable task : tasks) {
+            vertx.setTimer(delay, id -> task.run());
+            delay += 200;
+        }
+    }
+
+    private void reconnect() {
+        if (client != null) {
+            client.disconnect();
+        }
+
+        client = MqttClient.create(vertx);
+        client.connect(port, mqttAddress)
+                .onSuccess(res -> {
+                    Logger.info("MQTT reconnected");
+                })
+                .onFailure(err -> {
+                    vertx.setTimer(2000, id -> reconnect());
+                });
     }
 
     private void publish(Information information) {
-        this.client.publish("DASHBOARD/" + information.getTopic(), information.toPayload(), MqttQoS.AT_MOST_ONCE, false, true);
+        Buffer payloadBuffer = information.toPayload();
+        String payload = payloadBuffer.toString();
+        String topic = "DASHBOARD/" + information.getTopic();
+        lastPayloads.compute(topic, (k, last) -> {
+            if (last == null || !last.equals(payload)) {
+                client.publish(topic, payloadBuffer, MqttQoS.AT_MOST_ONCE, false, true);
+                return payload;
+            }
+            return last;
+        });
     }
+
+    private void publishFan() {
+        this.mqttDevices.getDevices(Fan.class).forEach(device -> {
+            publish(Information.fan(device.getPositionPath(),
+                    device.isOn(),
+                    device.getSpeed(),
+                    getPassword(device)));
+        });
+    }
+
 
     private void publishLight() {
         this.knxDevices.getKNXDevices(Light.class).forEach(device -> {
+            var lux = this.knxDevices.getKNXDeviceByRoom(LuxSensor.class, device.getPositionPath());
+            publish(Information.light(device.getPositionPath(),
+                    device.isOn(),
+                    lux.map(LuxSensor::getSmoothedLux).orElse(0.0f),
+                    getPassword(device)));
+        });
+        this.shellyDevices.getDevices(tools.vlab.kberry.core.mqtt.shelly.devices.device.Led.class).forEach(device -> {
             var lux = this.knxDevices.getKNXDeviceByRoom(LuxSensor.class, device.getPositionPath());
             publish(Information.light(device.getPositionPath(),
                     device.isOn(),
@@ -94,6 +180,10 @@ public class DashboardUpdate extends AbstractVerticle {
 
     private void publishPlugs() {
         this.knxDevices.getKNXDevices(Plug.class).forEach(plug -> publish(Information.plug(
+                plug.getPositionPath(),
+                plug.isOn(),
+                getPassword(plug))));
+        this.shellyDevices.getDevices(tools.vlab.kberry.core.mqtt.shelly.devices.device.Plug.class).forEach(plug -> publish(Information.plug(
                 plug.getPositionPath(),
                 plug.isOn(),
                 getPassword(plug))));
@@ -136,10 +226,14 @@ public class DashboardUpdate extends AbstractVerticle {
     }
 
     private void publishLED() {
-        this.knxDevices.getKNXDevices(Led.class).forEach(jalousie -> publish(Information.led(
-                jalousie.getPositionPath(),
-                jalousie.getRGB(),
-                getPassword(jalousie))));
+        this.knxDevices.getKNXDevices(Led.class).forEach(led -> publish(Information.led(
+                led.getPositionPath(),
+                led.getRGB(),
+                getPassword(led))));
+        this.shellyDevices.getDevices(tools.vlab.kberry.core.mqtt.shelly.devices.device.Led.class).forEach(led -> publish(Information.led(
+                led.getPositionPath(),
+                led.getColor().toRGB(),
+                getPassword(led))));
     }
 
     private void publishDimmer() {
@@ -149,12 +243,51 @@ public class DashboardUpdate extends AbstractVerticle {
                 getPassword(dimmer))));
     }
 
+    private void publishWeather() {
+        this.serviceProviders.temperaturServiceProvider().getTemperatureToday("morning")
+                .ifPresent(temp -> publish(Information.weather("Morgen", temp)));
+        this.serviceProviders.temperaturServiceProvider().getTemperatureToday("afternoon")
+                .ifPresent(temp -> publish(Information.weather("Nachmittag", temp)));
+        this.serviceProviders.temperaturServiceProvider().getTemperatureToday("evening")
+                .ifPresent(temp -> publish(Information.weather("Abend", temp)));
+    }
+
+    private void publishCalendar() {
+        this.serviceProviders.calendarServiceProvider().get("garbage").getToday()
+                .onSuccess(entries -> {
+                    var text = entries.stream().map(entry -> String.format("(%s-%s) %s",
+                            entry.eventTime().start().format(DateTimeFormatter.ISO_TIME),
+                            entry.eventTime().end().format(DateTimeFormatter.ISO_TIME),
+                            entry.title()
+                    )).collect(Collectors.joining("\n"));
+                    publish(Information.calendar("Heute", text));
+                })
+                .onFailure(throwable -> Logger.error(throwable, "Calendar fetch failed"));
+        this.serviceProviders.calendarServiceProvider().get("garbage").getTomorrow()
+                .onSuccess(entries -> {
+                    var text = entries.stream().map(entry -> String.format("(%s-%s) %s",
+                            entry.eventTime().start().format(DateTimeFormatter.ISO_TIME),
+                            entry.eventTime().end().format(DateTimeFormatter.ISO_TIME),
+                            entry.title()
+                    )).collect(Collectors.joining("\n"));
+                    publish(Information.calendar("Morgen", text));
+                })
+                .onFailure(throwable -> Logger.error(throwable, "Calendar fetch failed"));
+    }
+
     private void publishAllScene() {
         this.scenes.forEach(scene -> publish(Information.scene(scene.getPositionPath(), scene.getName(), scene.getIcon(), getPassword(scene))));
     }
 
-
     private String getPassword(KNXDevice device) {
+        return passwordRequired.contains(device.getPositionPath()) ? password : null;
+    }
+
+    private String getPassword(CustomMqttDevice device) {
+        return passwordRequired.contains(device.getPositionPath()) ? password : null;
+    }
+
+    private String getPassword(ShellyDevice device) {
         return passwordRequired.contains(device.getPositionPath()) ? password : null;
     }
 
@@ -163,8 +296,15 @@ public class DashboardUpdate extends AbstractVerticle {
     }
 
 
+
     public void stop() {
-        vertx.cancelTimer(timerId);
+        if (timerId != 0) vertx.cancelTimer(timerId);
+        if (calendarTimerId != 0) vertx.cancelTimer(calendarTimerId);
+        if (weatherTimerId != 0) vertx.cancelTimer(weatherTimerId);
+
+        if (client != null) {
+            client.disconnect();
+        }
     }
 
 }

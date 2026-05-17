@@ -1,23 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:SmartHome/card/light_card.dart';
-import 'package:SmartHome/card/stream_card.dart';
-import 'package:SmartHome/card/usage_card.dart';
-import 'package:SmartHome/model/Position.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
-import '../card/jalousie_card.dart';
-import '../card/switch_card.dart';
-import '../card/temperatur_card.dart';
-import '../card/weather_card.dart';
+import '../core/app_logger.dart';
 import '../dialog/dialog_manager.dart';
 import '../model/data.dart';
 import '../widgets/combobox.dart';
-import '../card/light_dimmer_card.dart';
 import '../service_provider.dart';
 import '../widgets/position_menu.dart';
 import 'package:logger/logger.dart';
-import '../model/data.dart';
 import '../card/card_manager.dart';
 
 final log = Logger();
@@ -45,17 +36,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       });
       if (!connected) return false;
 
-      log.i("✅ MQTT verbunden");
+      AppLogger().log("✅ MQTT verbunden");
       mqtt.subscribeToInformation((Information info, String topic) {
         setState(() {
-
           informationMap[topic] = info;
         });
       });
       return true;
     } catch (e) {
       _mqttConnected = false;
-      log.t("❌ MQTT-Verbindung fehlgeschlagen: $e");
+      AppLogger().log("❌ MQTT-Verbindung fehlgeschlagen: $e");
     }
     return false;
   }
@@ -76,12 +66,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   }
 
   void loadPositionPaths() {
-    log.t("Load Position Path");
+    AppLogger().log("Load Position Path");
     if (!_mqttConnected) return; // nur wenn verbunden
     final mqtt = ref.read(smartHomeServiceProvider);
-    log.t("Execute Position Path");
+    AppLogger().log("Execute Position Path");
     mqtt.getPositionPaths((List<String> positionPaths) {
-      log.t("received Position Path");
+      AppLogger().log("received Position Path");
       setState(() {
         positionsPaths["Positionen"] = positionPaths
             .map((path) => path.split("/")[0])
@@ -108,10 +98,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       final matchesType = type == InformationType.alle || info.type == type;
       final matchesPosition =
           positionPath == null ||
-          (info.positionPath != null &&
-              info.positionPath!.toLowerCase().contains(
-                positionPath.toLowerCase().trim(),
-              ));
+          (info.positionPath.toLowerCase().contains(
+            positionPath.toLowerCase().trim(),
+          ));
       return matchesType && matchesPosition;
     }).toList();
   }
@@ -124,18 +113,26 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       positionPath: "Haus/EG/Eingang/Türkamera",
       type: InformationType.camera,
       password: null,
-      values: ["rtsp://admin:dyjBu1-pawbin-biqbuc@192.168.178.99:554/h264Preview_01_main"]
+      values: [
+        "rtsp://admin:dyjBu1-pawbin-biqbuc@192.168.178.99:554/h264Preview_01_main",
+      ],
     );
     informationMap["phone"] = Information(
       type: InformationType.launcher,
       positionPath: "Haus/EG/Gang/Telefon",
       password: null,
-      values: ["openSipgate", "phone"]
+      values: ["openSipgate", "phone"],
     );
     informationMap["camera"] = Information(
       type: InformationType.launcher,
       positionPath: "Haus/EG/Gang/Camera",
       values: ["openReolinkApp", "camera"],
+      password: null,
+    );
+    informationMap["logs"] = Information(
+      type: InformationType.logs,
+      positionPath: "Haus/EG/Gang/Log",
+      values: [],
       password: null,
     );
     _initAndLoad();

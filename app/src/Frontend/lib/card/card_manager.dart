@@ -1,3 +1,4 @@
+import 'package:SmartHome/card/calendar_card.dart';
 import 'package:flutter/material.dart';
 import '../model/data.dart';
 import '../card/jalousie_card.dart';
@@ -12,9 +13,13 @@ import '../card/app_launcher_card.dart';
 import '../card/light_dimmer_card.dart';
 import '../card/scene_card.dart';
 import '../card/reolink_card.dart';
+import '../card/calendar_card.dart';
 import 'package:SmartHome/card/light_card.dart';
 import 'package:SmartHome/card/stream_card.dart';
 import 'package:SmartHome/card/usage_card.dart';
+
+
+import 'log_card.dart';
 
 Widget buildCard(
   Information item,
@@ -32,6 +37,11 @@ Widget buildCard(
         room: item.room,
         position: double.parse(item.firstValue),
         title: item.title,
+      );
+    case InformationType.logs:
+      return LogCard(
+        title: "Logs",
+        icon: "warning_outlined", // oder beliebiges Icon aus IconUtil
       );
     case InformationType.humidity:
       return HumidityCard(information: item);
@@ -56,6 +66,7 @@ Widget buildCard(
         room: item.room,
         title: item.title,
         isOn: item.firstValue == "true",
+        speed: int.parse(item.secondValue!),
       );
     case InformationType.led:
       return LedCard(information: item);
@@ -73,6 +84,8 @@ Widget buildCard(
       return Co2Card(information: item);
     case InformationType.energy:
       return EnergyCard(information: item);
+    case InformationType.calendar:
+      return CalendarCard(information: item);
     default:
       return const SizedBox();
   }

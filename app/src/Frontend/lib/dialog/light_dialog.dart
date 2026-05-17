@@ -3,6 +3,7 @@ import '../model/data.dart';
 import '../dialog/setting_view.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../service_provider.dart';
+import 'log_view.dart';
 
 class LightDialog extends ConsumerStatefulWidget {
   final Information information;
@@ -21,7 +22,7 @@ class _LightDialogState extends ConsumerState<LightDialog>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     isLightOn = widget.information.firstValue == "true";
     _getLightStatus((bool status) {
       setState(() {
@@ -127,6 +128,7 @@ class _LightDialogState extends ConsumerState<LightDialog>
               tabs: const [
                 Tab(icon: Icon(Icons.power_settings_new), text: "Steuerung"),
                 Tab(icon: Icon(Icons.settings), text: "Einstellungen"),
+                Tab(icon: Icon(Icons.receipt_long), text: "Logs"),
               ],
             ),
 
@@ -136,6 +138,7 @@ class _LightDialogState extends ConsumerState<LightDialog>
               child: TabBarView(
                 controller: _tabController,
                 children: [
+
                   // --- TAB 1: Steuerung ---
                   Padding(
                     padding: const EdgeInsets.all(20),
@@ -186,6 +189,9 @@ class _LightDialogState extends ConsumerState<LightDialog>
                   SettingsView(
                     positionPath: widget.information.positionPath,
                     type: widget.information.type,
+                  ),
+                  LogView(
+                    positionPath: widget.information.positionPath,
                   ),
                 ],
               ),

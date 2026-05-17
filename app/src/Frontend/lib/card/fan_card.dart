@@ -1,103 +1,130 @@
 import 'package:flutter/material.dart';
 
-class FanCard extends StatelessWidget {
-  final String title;
-  final bool isOn;
-  final String room;
-  final IconData? customIcon; // optionales Icon
-
-  // SVG für Lüfter aus
-  static const String svgOff = '''
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <circle cx="32" cy="32" r="30" stroke="gray" stroke-width="4" fill="none"/>
-  <line x1="32" y1="32" x2="32" y2="2" stroke="gray" stroke-width="4"/>
-</svg>
-''';
-
-  // SVG für Lüfter an
-  static const String svgOn = '''
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <circle cx="32" cy="32" r="30" stroke="cyan" stroke-width="4" fill="none"/>
-  <line x1="32" y1="32" x2="32" y2="2" stroke="cyan" stroke-width="4"/>
-  <line x1="32" y1="32" x2="62" y2="32" stroke="cyan" stroke-width="4"/>
-  <line x1="32" y1="32" x2="12" y2="56" stroke="cyan" stroke-width="4"/>
-</svg>
-''';
+class FanCard extends StatefulWidget {
+  final String room; // Raumbezeichnung
+  final String title; // z.B. "Lüfter"
+  final bool isOn; // An/Aus
+  final int speed; // 0-100 %
 
   const FanCard({
     super.key,
     required this.room,
     required this.title,
     required this.isOn,
-    this.customIcon,
+    required this.speed,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final Color accent = isOn ? Colors.deepPurple : Colors.grey.shade600;
-    final Color bgColor = const Color(0xFF3A3A3A);
-    final Color borderColor = isOn ? Colors.deepPurple : Colors.grey.shade800;
+  State<FanCard> createState() => _FanCardState();
+}
 
-    Widget _buildIcon() {
-      if (customIcon != null) {
-        return Icon(customIcon, size: 36, color: accent);
-      } else {
-        return Icon(
-          isOn ? Icons.toys : Icons.mode_fan_off,
-          size: 36,
-          color: accent,
-        );
-      }
+class _FanCardState extends State<FanCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  Color get _color {
+    if (!widget.isOn) return Colors.grey.shade700;
+    if (widget.speed < 40) return Colors.lightBlueAccent;
+    if (widget.speed < 70) return Colors.blueAccent;
+    return Colors.deepPurpleAccent;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+
+    if (widget.isOn) {
+      _controller.repeat(reverse: true);
     }
+  }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: borderColor, width: 5),
-        boxShadow: [
-          BoxShadow(
-            color: accent.withOpacity(isOn ? 0.4 : 0),
-            blurRadius: isOn ? 20 : 0,
-            spreadRadius: isOn ? 4 : 0,
-            offset: const Offset(0, 0),
+  @override
+  void didUpdateWidget(FanCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.isOn && !_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    } else if (!widget.isOn && _controller.isAnimating) {
+      _controller.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = const Color(0xFF3A3A3A);
+    final borderColor = _color;
+    final glowColor = _color;
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final double glow = widget.isOn ? 0.3 + 0.2 * widget.speed / 100 : 0.2;
+        return Container(
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: borderColor, width: 5),
+            boxShadow: [
+              BoxShadow(
+                color: glowColor.withOpacity(glow),
+                blurRadius: 18,
+                spreadRadius: 3,
+                offset: const Offset(0, 0),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              room.toUpperCase(),
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey.shade400,
-                letterSpacing: 1.0,
-              ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  widget.room.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey.shade400,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Icon(
+                  Icons.flip_camera_android, // stilisiertes Lüfter-Icon
+                  size: 40,
+                  color: _color,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _color,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.isOn ? "AN - ${widget.speed} %" : "AUS",
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade400,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Icon(
-              isOn ? Icons.flip_camera_android_sharp : Icons.mode_fan_off,
-              size: 50,
-              color: accent,
-            ),
-
-            const SizedBox(height: 10),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: accent,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

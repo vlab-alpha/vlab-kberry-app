@@ -2,44 +2,47 @@ package tools.vlab.kberry.app.settings;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.vertx.core.json.JsonObject;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import tools.vlab.kberry.app.dashboard.Setting;
 
+import java.time.LocalTime;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Stream;
 
 @Getter
 @Setter
+@AllArgsConstructor
 public class Jalousie {
-
-    private boolean isAutoTime;
     private boolean kindersicherung;
-    private String weekdayDownTime;
-    private String weekendDownTime;
+    private int maxPosition = 100;
+
+    private boolean isWeekDayAutoTime;
     private String weekdayUpTime;
+    private String weekdayDownTime;
+    private boolean weekdayWakeUp;
+    private int weekdayWakeUpMinutes;
+    private int weekdayWakeWakeUpPosition;
+
+    private boolean isWeekendAutoTime;
+    private String weekendDownTime;
     private String weekendUpTime;
-    private String wakeUpTime;
-    private boolean wakeUp;
-    private int wakeUpPosition;
+    private boolean weekendWakeUp;
+    private int weekendWakeUpMinutes;
+    private int weekendWakeWakeUpPosition;
+
 
     public Jalousie() {
     }
 
-    public Jalousie(boolean kindersicherung, String weekdayDownTime, String weekdayUpTime, String weekendDownTime, String weekendUpTime, boolean wakeUp, String wakeUpTime, int wakeUpPosition) {
-        this.kindersicherung = kindersicherung;
-        this.weekdayDownTime = weekdayDownTime;
-        this.weekdayUpTime = weekdayUpTime;
-        this.weekendDownTime = weekendDownTime;
-        this.weekendUpTime = weekendUpTime;
-        this.wakeUp = wakeUp;
-        this.wakeUpTime = wakeUpTime;
-        this.wakeUpPosition = wakeUpPosition;
-    }
 
     @JsonIgnore
     public static Jalousie first() {
-        return new Jalousie(false, "18:00", "07:00", "18:00", "07:00", false, "8:00", 20);
+        return new Jalousie(false, 100,
+                true, "07:00", "21:00", true, 30, 20,
+                false, "09:00", "21:00", false, 30, 20
+        );
     }
 
     @JsonIgnore
@@ -54,17 +57,27 @@ public class Jalousie {
 
     @JsonIgnore
     public List<JsonObject> toSettings() {
-        return List.of(
-                Setting.checkbox("Kindersicherung", isKindersicherung(), "child_care").toJson(),
-                Setting.checkbox("Auto via Time", isAutoTime(), "timelapse_outlined").toJson(),
-                Setting.time("Zeit runter", this.getWeekdayDownTime(), "arrow_downward").toJson(),
-                Setting.time("Zeit hoch", this.getWeekdayUpTime(), "arrow_upward").toJson(),
-                Setting.time("Zeit runter WE", this.getWeekendDownTime(), "arrow_downward").toJson(),
-                Setting.time("Zeit hoch WE", this.getWeekendUpTime(), "arrow_upward").toJson(),
-                Setting.checkbox("Aufwecken", isWakeUp(), "access_alarm").toJson(),
-                Setting.time("Aufwecken Um", this.getWakeUpTime(), "access_alarm").toJson(),
-                Setting.numberSpan("Aufwecken Position", 0, 100, getWakeUpPosition(), "access_alarm").toJson()
-        );
+        return Stream.of(
+                Setting.checkbox("Kindersicherung", this.kindersicherung, "child_care"),
+                Setting.numberSpan("Max Position", 0, 100, this.maxPosition, "arrow_upward"),
+
+                Setting.seperator("Wochentag", "arrow_upward"),
+                Setting.checkbox("Auto (Wochentag)", this.isWeekDayAutoTime, "timelapse_outlined"),
+                Setting.time("Wochentag (Hoch)", this.weekdayUpTime, "arrow_upward"),
+                Setting.time("Wochentag (Runter)", this.weekdayDownTime, "arrow_downward"),
+                Setting.checkbox("Wochentag Aufwecken", this.weekdayWakeUp, "access_alarm"),
+                Setting.minutes("Wochentag Aufwecken (Min)", this.weekdayWakeUpMinutes, "access_alarm"),
+                Setting.numberSpan("Wochentag Aufwecken (Pos)", 0, 100, this.weekdayWakeWakeUpPosition, "access_alarm"),
+
+                Setting.seperator("Wochenende", "arrow_upward"),
+                Setting.checkbox("Auto (Wochenende)", this.isWeekendAutoTime, "timelapse_outlined"),
+                Setting.time("Wochenende (Hoch)", this.weekendUpTime, "arrow_upward"),
+                Setting.time("Wochenende (Runter)", this.weekendDownTime, "arrow_downward"),
+                Setting.checkbox("Wochenende Aufwecken", this.weekendWakeUp, "access_alarm"),
+                Setting.minutes("Wochenende Aufwecken (Min)", this.weekendWakeUpMinutes, "access_alarm"),
+                Setting.numberSpan("Wochenende Aufwecken (Pos)", 0, 100, this.weekendWakeWakeUpPosition, "access_alarm")
+
+        ).map(Setting::toJson).toList();
     }
 
     @JsonIgnore
@@ -77,14 +90,22 @@ public class Jalousie {
             String value = setting.getJsonObject("value").getString("value");
             switch (title) {
                 case "Kindersicherung" -> jalousie.setKindersicherung(Boolean.parseBoolean(value));
-                case "Auto via Time" -> jalousie.setAutoTime(Boolean.parseBoolean(value));
-                case "Zeit runter" -> jalousie.setWeekdayDownTime(value);
-                case "Zeit hoch" -> jalousie.setWeekdayUpTime(value);
-                case "Zeit runter WE" -> jalousie.setWeekendDownTime(value);
-                case "Zeit hoch WE" -> jalousie.setWeekendUpTime(value);
-                case "Aufwecken" -> jalousie.setWakeUp(Boolean.parseBoolean(value));
-                case "Aufwecken Um" -> jalousie.setWakeUpTime(value);
-                case "Aufwecken Position" ->  jalousie.setWakeUpPosition((int) Math.floor(Double.parseDouble(value)));
+                case "Max Position" -> jalousie.setMaxPosition((int) Math.floor(Double.parseDouble(value)));
+
+                case "Auto (Wochentag)" -> jalousie.setWeekDayAutoTime(Boolean.parseBoolean(value));
+                case "Wochentag (Hoch)"-> jalousie.setWeekdayUpTime(value);
+                case "Wochentag (Runter)"-> jalousie.setWeekdayDownTime(value);
+                case "Wochentag Aufwecken"-> jalousie.setWeekdayWakeUp(Boolean.parseBoolean(value));
+                case "Wochentag Aufwecken (Min)"-> jalousie.setWeekdayWakeUpMinutes(Integer.parseInt(value));
+                case "Wochentag Aufwecken (Pos)"-> jalousie.setWeekdayWakeWakeUpPosition((int) Math.floor(Double.parseDouble(value)));
+
+                case "Auto (Wochenende)" -> jalousie.setWeekendAutoTime(Boolean.parseBoolean(value));
+                case "Wochenende (Hoch)"-> jalousie.setWeekendUpTime(value);
+                case "Wochenende (Runter)"-> jalousie.setWeekendDownTime(value);
+                case "Wochenende Aufwecken"-> jalousie.setWeekendWakeUp(Boolean.parseBoolean(value));
+                case "Wochenende Aufwecken (Min)"-> jalousie.setWeekendWakeUpMinutes(Integer.parseInt(value));
+                case "Wochenende Aufwecken (Pos)"-> jalousie.setWeekendWakeWakeUpPosition((int) Math.floor(Double.parseDouble(value)));
+
                 default -> {
                     // Unbekanntes Setting ignorieren
                 }
@@ -93,44 +114,35 @@ public class Jalousie {
         return jalousie;
     }
 
+
     @JsonIgnore
-    public Optional<Time> getWakeUpTimeOpt() {
-        if (isWakeUp()) {
-            return Optional.of(Time.of(this.wakeUpTime));
-        }
-        return Optional.empty();
+    public LocalTime getWeekdayDownTime() {
+        return LocalTime.parse(this.weekdayDownTime);
     }
 
     @JsonIgnore
-    public Optional<Time> getUpTimeOpt() {
-        if (isAutoTime()) {
-            return Optional.of(Time.of(this.weekdayUpTime));
-        }
-        return Optional.empty();
+    public LocalTime getWeekdayUpTime() {
+        return LocalTime.parse(this.weekdayUpTime);
     }
 
     @JsonIgnore
-    public Optional<Time> getDownTimeOpt() {
-        if (isAutoTime()) {
-            return Optional.of(Time.of(this.weekdayDownTime));
-        }
-        return Optional.empty();
+    public LocalTime getWeekendDownTime() {
+        return LocalTime.parse(this.weekendDownTime);
     }
 
     @JsonIgnore
-    public Optional<Time> getWeekendUpTimeOpt() {
-        if (isAutoTime()) {
-            return Optional.of(Time.of(this.weekendUpTime));
-        }
-        return Optional.empty();
+    public LocalTime getWeekendUpTime() {
+        return LocalTime.parse(this.weekendUpTime);
     }
 
     @JsonIgnore
-    public Optional<Time> getWeekendDownTimeOpt() {
-        if (isAutoTime()) {
-            return Optional.of(Time.of(this.weekendDownTime));
-        }
-        return Optional.empty();
+    public LocalTime getWeekdayWakeupTime() {
+        return this.getWeekdayUpTime().minusMinutes(this.weekdayWakeUpMinutes);
+    }
+
+    @JsonIgnore
+    public LocalTime getWeekendWakeupTime() {
+        return this.getWeekendUpTime().minusMinutes(this.weekendWakeUpMinutes);
     }
 
 }

@@ -3,10 +3,10 @@ package tools.vlab.kberry.app.commands;
 import io.vertx.core.json.JsonObject;
 import tools.vlab.kberry.app.Haus;
 import tools.vlab.kberry.core.PositionPath;
-import tools.vlab.kberry.core.devices.RGB;
-import tools.vlab.kberry.core.devices.actor.Dimmer;
-import tools.vlab.kberry.core.devices.actor.Led;
-import tools.vlab.kberry.core.devices.actor.Plug;
+import tools.vlab.kberry.core.RGB;
+import tools.vlab.kberry.core.knx.devices.actor.Dimmer;
+import tools.vlab.kberry.core.knx.devices.actor.Led;
+import tools.vlab.kberry.core.knx.devices.actor.Plug;
 import tools.vlab.kberry.server.commands.CommandTopic;
 import tools.vlab.kberry.server.commands.Scene;
 

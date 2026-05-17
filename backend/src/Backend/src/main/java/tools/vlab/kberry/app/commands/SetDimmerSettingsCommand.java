@@ -46,7 +46,7 @@ public class SetDimmerSettingsCommand extends Command {
     @Override
     public void init() {
         this.getKnxDevices()
-                .getKNXDevices(tools.vlab.kberry.core.devices.actor.Dimmer.class)
+                .getKNXDevices(tools.vlab.kberry.core.knx.devices.actor.Dimmer.class)
                 .forEach(device -> settings.getSetting(device.getPositionPath())
                         .filter(Dimmer::isDimmerByLux)
                         .ifPresent(setting -> setDimmerLogic(device.getPositionPath(), setting)

@@ -88,7 +88,7 @@ public class Light {
                 Setting.number("Min Lux", getMinLux(), "person_pin_circle").toJson(),
                 Setting.checkbox("Auto An Begrenzen",  isPresenceOnDuringTime(), "person_pin_circle").toJson(),
                 Setting.time("Auto An Start", getStartAutoOn(),"light_time_on").toJson(),
-                Setting.time("Auto An Ende", getStartAutoOn(),"light_time_off").toJson()
+                Setting.time("Auto An Ende", getEndAutoOn(),"light_time_off").toJson()
         );
     }
 

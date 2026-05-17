@@ -16,6 +16,7 @@ public enum InformationType {
     energy,
     voc,
     led,
+    calendar,
     lux,
     floorHeater,
     alle,
